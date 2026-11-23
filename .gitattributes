@@ -1,0 +1,2 @@
+# Keep generated upstream license texts byte-for-byte, including their line endings.
+public/third-party-notices.txt -text -whitespace

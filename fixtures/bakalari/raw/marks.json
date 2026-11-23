@@ -1,0 +1,90 @@
+{
+ "Subjects": [
+  {
+   "Marks": [
+    {
+     "MarkDate": "2026-10-02T00:00:00+02:00",
+     "EditDate": "2026-10-02T10:00:00+02:00",
+     "Caption": "Kvadratické rovnice",
+     "Theme": "Písemná práce",
+     "MarkText": "1",
+     "TeacherId": "UA",
+     "Type": "Mark",
+     "TypeNote": "Písemná práce",
+     "Weight": 10,
+     "SubjectId": "M",
+     "IsNew": true,
+     "IsPoints": false,
+     "CalculatedMarkText": "",
+     "ClassRankText": null,
+     "Id": "MK1",
+     "PointsText": "",
+     "MaxPoints": 0
+    },
+    {
+     "MarkDate": "2026-09-20T00:00:00+02:00",
+     "EditDate": "2026-09-20T10:00:00+02:00",
+     "Caption": "Ústní zkoušení",
+     "Theme": null,
+     "MarkText": "2-",
+     "TeacherId": "UA",
+     "Type": "Mark",
+     "TypeNote": "Ústní",
+     "Weight": 3,
+     "SubjectId": "M",
+     "IsNew": false,
+     "IsPoints": false,
+     "CalculatedMarkText": "",
+     "ClassRankText": "5. z 24",
+     "Id": "MK2",
+     "PointsText": "",
+     "MaxPoints": 0
+    }
+   ],
+   "AverageText": "1,38",
+   "TemporaryMark": "",
+   "SubjectNote": "",
+   "PointsOnly": false,
+   "MarkPredictionEnabled": false,
+   "Subject": {
+    "Id": "M",
+    "Abbrev": "M",
+    "Name": "Matematika"
+   }
+  },
+  {
+   "Marks": [
+    {
+     "MarkDate": "2026-10-05T00:00:00+02:00",
+     "EditDate": "2026-10-05T10:00:00+02:00",
+     "Caption": "Sloh",
+     "Theme": "Slohová práce",
+     "MarkText": "3",
+     "TeacherId": "UB",
+     "Type": "Mark",
+     "TypeNote": "Sloh",
+     "Weight": 5,
+     "SubjectId": "CJ",
+     "IsNew": true,
+     "IsPoints": false,
+     "CalculatedMarkText": "",
+     "ClassRankText": null,
+     "Id": "MK3",
+     "PointsText": "",
+     "MaxPoints": 0
+    }
+   ],
+   "AverageText": "3,00",
+   "TemporaryMark": "",
+   "SubjectNote": "",
+   "PointsOnly": false,
+   "MarkPredictionEnabled": false,
+   "Subject": {
+    "Id": "CJ",
+    "Abbrev": "ČJ",
+    "Name": "Český jazyk a literatura"
+   }
+  }
+ ],
+ "MarkOptions": []
+}

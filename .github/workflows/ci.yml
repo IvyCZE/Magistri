@@ -1,0 +1,51 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check:public
+      - run: npm run licenses:check
+      - run: npm audit
+      - run: npm test
+      - run: npm run build
+      - name: Check the deployment image
+        run: |
+          docker build -t magistri-ci .
+          docker run --detach --name magistri-ci --publish 127.0.0.1:8080:80 magistri-ci
+          trap 'docker logs magistri-ci; docker rm --force magistri-ci' EXIT
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 1 --retry-max-time 45 --connect-timeout 2 --max-time 5 http://127.0.0.1:8080/ > /dev/null
+          curl --fail http://127.0.0.1:8080/third-party-notices.txt > /dev/null
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api-proxy/127.0.0.1/api/login)
+          test "$status" = 403
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - run: ./gradlew testDebugUnitTest assembleDebug --no-daemon
+        working-directory: android

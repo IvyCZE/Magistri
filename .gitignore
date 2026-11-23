@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+
+# Production build artifacts
+dist/
+dist-ssr/
+
+# Local env files
+*.local
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Temporary images / scripts
+*.png
+!public/*.png
+!android/**/*.png
+!assets/*.png
+!docs/screenshots/*.png
+*.jpg
+*.jpeg
+*.cjs
+*.log
+*.tsbuildinfo
+
+# Android
+android/**/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+.gradle/
+captures/
+*.jks
+*.keystore
+keystore.properties
+
+# Local API investigations can contain account data, even after anonymization.
+fixtures/bakalari-real/
+scripts/probe-*.mjs
+fixtures/private/
+
+# Cached public school directory (rebuilt automatically)
+.cache/

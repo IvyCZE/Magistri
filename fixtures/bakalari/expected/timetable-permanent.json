@@ -1,0 +1,175 @@
+{
+ "hours": [
+  {
+   "id": 1,
+   "caption": "1",
+   "beginTime": "08:00",
+   "endTime": "08:45"
+  },
+  {
+   "id": 2,
+   "caption": "2",
+   "beginTime": "08:55",
+   "endTime": "09:40"
+  },
+  {
+   "id": 3,
+   "caption": "3",
+   "beginTime": "10:00",
+   "endTime": "10:45"
+  },
+  {
+   "id": 4,
+   "caption": "4",
+   "beginTime": "10:55",
+   "endTime": "11:40"
+  }
+ ],
+ "days": [
+  {
+   "dayOfWeek": 1,
+   "dayOfWeekName": "Pondělí",
+   "date": "",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 2,
+   "dayOfWeekName": "Úterý",
+   "date": "",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 3,
+   "dayOfWeekName": "Středa",
+   "date": "",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 4,
+   "dayOfWeekName": "Čtvrtek",
+   "date": "",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 5,
+   "dayOfWeekName": "Pátek",
+   "date": "",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    }
+   ]
+  }
+ ]
+}

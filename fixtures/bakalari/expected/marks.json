@@ -1,0 +1,32 @@
+[
+ {
+  "id": "MK1",
+  "subjectAbbrev": "M",
+  "subjectName": "Matematika",
+  "markText": "1",
+  "weight": 10,
+  "caption": "Kvadratické rovnice",
+  "markDate": "2026-10-02",
+  "isNew": true
+ },
+ {
+  "id": "MK2",
+  "subjectAbbrev": "M",
+  "subjectName": "Matematika",
+  "markText": "2-",
+  "weight": 3,
+  "caption": "Ústní zkoušení",
+  "markDate": "2026-09-20",
+  "isNew": false
+ },
+ {
+  "id": "MK3",
+  "subjectAbbrev": "ČJ",
+  "subjectName": "Český jazyk a literatura",
+  "markText": "3",
+  "weight": 5,
+  "caption": "Sloh",
+  "markDate": "2026-10-05",
+  "isNew": true
+ }
+]

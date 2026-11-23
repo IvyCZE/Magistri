@@ -1,0 +1,158 @@
+[
+ {
+  "name": "merge-consecutive-and-weekend",
+  "now": "2026-10-06T12:00:00",
+  "input": [
+   {
+    "id": "1",
+    "title": "Lyžák - 1. den",
+    "description": "",
+    "date": "2026-10-09",
+    "location": "Špindl"
+   },
+   {
+    "id": "2",
+    "title": "Lyžák - 2. den",
+    "description": "Odjezd v 7:00",
+    "date": "2026-10-12",
+    "organizer": "Novák"
+   },
+   {
+    "id": "3",
+    "title": "Divadlo",
+    "description": "",
+    "date": "2026-10-20",
+    "time": "18:00 - 20:00"
+   }
+  ],
+  "expected": [
+   {
+    "id": "1",
+    "title": "Lyžák",
+    "description": "Odjezd v 7:00",
+    "date": "2026-10-09",
+    "location": "Špindl",
+    "endDate": "2026-10-12",
+    "isPast": false,
+    "organizer": "Novák"
+   },
+   {
+    "id": "3",
+    "title": "Divadlo",
+    "description": "",
+    "date": "2026-10-20",
+    "time": "18:00 - 20:00",
+    "isPast": false
+   }
+  ]
+ },
+ {
+  "name": "gap-too-long",
+  "now": "2026-10-06T12:00:00",
+  "input": [
+   {
+    "id": "1",
+    "title": "Test",
+    "description": "",
+    "date": "2026-10-06"
+   },
+   {
+    "id": "2",
+    "title": "Test",
+    "description": "",
+    "date": "2026-10-09"
+   }
+  ],
+  "expected": [
+   {
+    "id": "1",
+    "title": "Test",
+    "description": "",
+    "date": "2026-10-06",
+    "isPast": false
+   },
+   {
+    "id": "2",
+    "title": "Test",
+    "description": "",
+    "date": "2026-10-09",
+    "isPast": false
+   }
+  ]
+ },
+ {
+  "name": "past-event",
+  "now": "2026-10-06T12:00:00",
+  "input": [
+   {
+    "id": "1",
+    "title": "Old",
+    "description": "",
+    "date": "2026-10-01"
+   },
+   {
+    "id": "2",
+    "title": "Today",
+    "description": "",
+    "date": "2026-10-06"
+   }
+  ],
+  "expected": [
+   {
+    "id": "1",
+    "title": "Old",
+    "description": "",
+    "date": "2026-10-01",
+    "isPast": true
+   },
+   {
+    "id": "2",
+    "title": "Today",
+    "description": "",
+    "date": "2026-10-06",
+    "isPast": false
+   }
+  ]
+ },
+ {
+  "name": "multi-day-entry-and-reverse-order",
+  "now": "2026-10-06T12:00:00",
+  "input": [
+   {
+    "id": "2",
+    "title": "Výlet (den 2/3)",
+    "description": "",
+    "date": "2026-10-14"
+   },
+   {
+    "id": "1",
+    "title": "Výlet (den 1/3)",
+    "description": "",
+    "date": "2026-10-13",
+    "endDate": "2026-10-13"
+   },
+   {
+    "id": "3",
+    "title": "Výlet (den 3/3)",
+    "description": "",
+    "date": "2026-10-15"
+   }
+  ],
+  "expected": [
+   {
+    "id": "1",
+    "title": "Výlet",
+    "description": "",
+    "date": "2026-10-13",
+    "endDate": "2026-10-15",
+    "isPast": false
+   }
+  ]
+ },
+ {
+  "name": "empty",
+  "now": "2026-10-06T12:00:00",
+  "input": [],
+  "expected": []
+ }
+]

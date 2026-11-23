@@ -1,0 +1,28 @@
+[
+ {
+  "id": "H1",
+  "subjectAbbrev": "M",
+  "subjectName": "Matematika",
+  "content": "Cvičení 3 a 4 na straně 57",
+  "date": "2026-10-01",
+  "deadline": "2026-10-09",
+  "done": false,
+  "attachments": [
+   {
+    "id": "A1",
+    "name": "Cviceni 3 a 4.pdf",
+    "size": 48213
+   }
+  ]
+ },
+ {
+  "id": "H2",
+  "subjectAbbrev": "AJ",
+  "subjectName": "Anglický jazyk",
+  "content": "Esej o dovolené",
+  "date": "2026-10-05",
+  "deadline": "2026-10-12",
+  "done": true,
+  "attachments": []
+ }
+]

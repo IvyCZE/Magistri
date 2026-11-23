@@ -1,0 +1,224 @@
+{
+ "hours": [
+  {
+   "id": 1,
+   "caption": "1",
+   "beginTime": "08:00",
+   "endTime": "08:45"
+  },
+  {
+   "id": 2,
+   "caption": "2",
+   "beginTime": "08:55",
+   "endTime": "09:40"
+  },
+  {
+   "id": 3,
+   "caption": "3",
+   "beginTime": "10:00",
+   "endTime": "10:45"
+  },
+  {
+   "id": 4,
+   "caption": "4",
+   "beginTime": "10:55",
+   "endTime": "11:40"
+  }
+ ],
+ "days": [
+  {
+   "dayOfWeek": 1,
+   "dayOfWeekName": "Pondělí",
+   "date": "2026-10-05",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    },
+    {
+     "hourId": 3,
+     "subjectId": "AJ",
+     "subjectAbbrev": "AJ",
+     "subjectName": "Anglický jazyk",
+     "teacherName": "Ing. Karel Dvořák",
+     "teacherAbbrev": "Dvo",
+     "roomAbbrev": "201",
+     "change": null
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 2,
+   "dayOfWeekName": "Úterý",
+   "date": "2026-10-06",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": {
+      "type": "Canceled",
+      "description": "Absence učitele",
+      "typeName": "Odpadlá hodina",
+      "typeAbbrev": "Odp",
+      "substituteTeacher": null
+     }
+    },
+    {
+     "hourId": 3,
+     "subjectId": "AJ",
+     "subjectAbbrev": "AJ",
+     "subjectName": "Anglický jazyk",
+     "teacherName": "Ing. Karel Dvořák",
+     "teacherAbbrev": "Dvo",
+     "roomAbbrev": "201",
+     "change": {
+      "type": "RoomChanged",
+      "description": "Změna učebny: 202",
+      "typeName": "Změna učebny",
+      "typeAbbrev": null,
+      "substituteTeacher": null
+     }
+    },
+    {
+     "hourId": 4,
+     "subjectId": "F",
+     "subjectAbbrev": "F",
+     "subjectName": "Fyzika",
+     "teacherName": "RNDr. Eva Černá",
+     "teacherAbbrev": "Čer",
+     "roomAbbrev": "202",
+     "change": {
+      "type": "Substitution",
+      "description": "Suplování: Svoboda Petr, 102 (F, 301)",
+      "typeName": "Suplování",
+      "typeAbbrev": "Supl",
+      "substituteTeacher": "Svoboda Petr"
+     }
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 3,
+   "dayOfWeekName": "Středa",
+   "date": "2026-10-07",
+   "dayDescription": "Podzimní prázdniny",
+   "dayType": "Holiday",
+   "lessons": []
+  },
+  {
+   "dayOfWeek": 4,
+   "dayOfWeekName": "Čtvrtek",
+   "date": "2026-10-08",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "F",
+     "subjectAbbrev": "F",
+     "subjectName": "Fyzika",
+     "teacherName": "RNDr. Eva Černá",
+     "teacherAbbrev": "Čer",
+     "roomAbbrev": "202",
+     "change": null
+    },
+    {
+     "hourId": 2,
+     "subjectId": "M",
+     "subjectAbbrev": "M",
+     "subjectName": "Matematika",
+     "teacherName": "Mgr. Jana Nováková",
+     "teacherAbbrev": "Nov",
+     "roomAbbrev": "101",
+     "change": null
+    },
+    {
+     "hourId": 3,
+     "subjectId": "AJ",
+     "subjectAbbrev": "AJ",
+     "subjectName": "Anglický jazyk",
+     "teacherName": "Ing. Karel Dvořák",
+     "teacherAbbrev": "Dvo",
+     "roomAbbrev": "201",
+     "change": {
+      "type": "Added",
+      "description": "Přidáno do rozvrhu",
+      "typeName": "Přidáno",
+      "typeAbbrev": null,
+      "substituteTeacher": null
+     }
+    }
+   ]
+  },
+  {
+   "dayOfWeek": 5,
+   "dayOfWeekName": "Pátek",
+   "date": "2026-10-09",
+   "dayDescription": "",
+   "dayType": "WorkDay",
+   "lessons": [
+    {
+     "hourId": 1,
+     "subjectId": "CJ",
+     "subjectAbbrev": "ČJ",
+     "subjectName": "Český jazyk a literatura",
+     "teacherName": "Mgr. Petr Svoboda",
+     "teacherAbbrev": "Svo",
+     "roomAbbrev": "102",
+     "change": null
+    },
+    {
+     "hourId": 3,
+     "subjectId": "",
+     "subjectAbbrev": "KUR",
+     "subjectName": "Jazykový kurz",
+     "teacherName": "",
+     "teacherAbbrev": "",
+     "roomAbbrev": "",
+     "change": {
+      "type": "Added",
+      "description": "Jazykový kurz",
+      "typeName": "Jazykový kurz",
+      "typeAbbrev": "KUR",
+      "substituteTeacher": null
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,44 @@
+{
+ "Homeworks": [
+  {
+   "ID": "H1",
+   "DateStart": "2026-10-01T00:00:00+02:00",
+   "DateEnd": "2026-10-09T00:00:00+02:00",
+   "Content": "Cvičení 3 a 4 na straně 57",
+   "Notice": "",
+   "Done": false,
+   "Closed": false,
+   "Electronic": false,
+   "Hour": 3,
+   "Class": { "Id": "C1", "Abbrev": "8.A", "Name": "" },
+   "Group": { "Id": "G1", "Abbrev": "celá", "Name": "celá třída" },
+   "Subject": { "Id": "M", "Abbrev": "M", "Name": "Matematika" },
+   "Teacher": { "Id": "T1", "Abbrev": "NOV", "Name": "Mgr. Jana Nováková" },
+   "Attachments": [
+    {
+     "Id": "A1",
+     "Name": "Cviceni 3 a 4.pdf",
+     "Size": 48213
+    }
+   ],
+   "Finished": false
+  },
+  {
+   "ID": "H2",
+   "DateStart": "2026-10-05T00:00:00+02:00",
+   "DateEnd": "2026-10-12T00:00:00+02:00",
+   "Content": "Esej o dovolené",
+   "Notice": "",
+   "Done": true,
+   "Closed": false,
+   "Electronic": false,
+   "Hour": 5,
+   "Class": { "Id": "C1", "Abbrev": "8.A", "Name": "" },
+   "Group": { "Id": "G1", "Abbrev": "celá", "Name": "celá třída" },
+   "Subject": { "Id": "AJ", "Abbrev": "AJ", "Name": "Anglický jazyk" },
+   "Teacher": { "Id": "T2", "Abbrev": "DVO", "Name": "Ing. Karel Dvořák" },
+   "Attachments": [],
+   "Finished": true
+  }
+ ]
+}

@@ -1,0 +1,864 @@
+{
+ "actual": {
+  "hours": [
+   {
+    "id": 1,
+    "caption": "1",
+    "beginTime": "08:00",
+    "endTime": "08:45"
+   },
+   {
+    "id": 2,
+    "caption": "2",
+    "beginTime": "08:55",
+    "endTime": "09:40"
+   },
+   {
+    "id": 3,
+    "caption": "3",
+    "beginTime": "10:00",
+    "endTime": "10:45"
+   },
+   {
+    "id": 4,
+    "caption": "4",
+    "beginTime": "10:55",
+    "endTime": "11:40"
+   }
+  ],
+  "days": [
+   {
+    "dayOfWeek": 1,
+    "dayOfWeekName": "Pondělí",
+    "date": "2026-10-05",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "1-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "1-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "1-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 2,
+    "dayOfWeekName": "Úterý",
+    "date": "2026-10-06",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "2-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "2-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": true,
+      "change": {
+       "changeType": "Canceled",
+       "description": "Hodina odpadá",
+       "typeName": "Odpadlá hodina",
+       "typeAbbrev": "Odp"
+      }
+     },
+     {
+      "id": "2-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": true,
+      "change": {
+       "changeType": "RoomChanged",
+       "description": "Změna učebny: 202",
+       "typeName": "Změna učebny"
+      }
+     },
+     {
+      "id": "2-4",
+      "hourId": 4,
+      "subjectId": "S4",
+      "subjectAbbrev": "FYZ",
+      "subjectName": "Fyzika",
+      "teacherName": "Černý",
+      "teacherAbbrev": "Čer",
+      "roomId": "301",
+      "roomAbbrev": "301",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 3,
+    "dayOfWeekName": "Středa",
+    "date": "2026-10-07",
+    "dayDescription": "Podzimní prázdniny",
+    "dayType": "Holiday",
+    "atoms": []
+   },
+   {
+    "dayOfWeek": 4,
+    "dayOfWeekName": "Čtvrtek",
+    "date": "2026-10-08",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "4-1",
+      "hourId": 1,
+      "subjectId": "S4",
+      "subjectAbbrev": "FYZ",
+      "subjectName": "Fyzika",
+      "teacherName": "Černý",
+      "teacherAbbrev": "Čer",
+      "roomId": "301",
+      "roomAbbrev": "301",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "4-2",
+      "hourId": 2,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 5,
+    "dayOfWeekName": "Pátek",
+    "date": "2026-10-09",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "5-1",
+      "hourId": 1,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "5-2",
+      "hourId": 2,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "5-3",
+      "hourId": 3,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   }
+  ]
+ },
+ "nextWeek": {
+  "hours": [
+   {
+    "id": 1,
+    "caption": "1",
+    "beginTime": "08:00",
+    "endTime": "08:45"
+   },
+   {
+    "id": 2,
+    "caption": "2",
+    "beginTime": "08:55",
+    "endTime": "09:40"
+   },
+   {
+    "id": 3,
+    "caption": "3",
+    "beginTime": "10:00",
+    "endTime": "10:45"
+   },
+   {
+    "id": 4,
+    "caption": "4",
+    "beginTime": "10:55",
+    "endTime": "11:40"
+   }
+  ],
+  "days": [
+   {
+    "dayOfWeek": 1,
+    "dayOfWeekName": "Pondělí",
+    "date": "2026-10-12",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "1-2",
+      "hourId": 2,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "1-3",
+      "hourId": 3,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 2,
+    "dayOfWeekName": "Úterý",
+    "date": "2026-10-13",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "2-1",
+      "hourId": 1,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "2-2",
+      "hourId": 2,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 3,
+    "dayOfWeekName": "Středa",
+    "date": "2026-10-14",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "3-1",
+      "hourId": 1,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "3-2",
+      "hourId": 2,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 4,
+    "dayOfWeekName": "Čtvrtek",
+    "date": "2026-10-15",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "4-1",
+      "hourId": 1,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "4-2",
+      "hourId": 2,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 5,
+    "dayOfWeekName": "Pátek",
+    "date": "2026-10-16",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "5-1",
+      "hourId": 1,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "5-2",
+      "hourId": 2,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   }
+  ]
+ },
+ "permanent": {
+  "hours": [
+   {
+    "id": 1,
+    "caption": "1",
+    "beginTime": "08:00",
+    "endTime": "08:45"
+   },
+   {
+    "id": 2,
+    "caption": "2",
+    "beginTime": "08:55",
+    "endTime": "09:40"
+   },
+   {
+    "id": 3,
+    "caption": "3",
+    "beginTime": "10:00",
+    "endTime": "10:45"
+   },
+   {
+    "id": 4,
+    "caption": "4",
+    "beginTime": "10:55",
+    "endTime": "11:40"
+   }
+  ],
+  "days": [
+   {
+    "dayOfWeek": 1,
+    "dayOfWeekName": "Pondělí",
+    "date": "",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "1-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "1-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "1-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 2,
+    "dayOfWeekName": "Úterý",
+    "date": "",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "2-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "2-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "2-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 3,
+    "dayOfWeekName": "Středa",
+    "date": "",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "3-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "3-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "3-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 4,
+    "dayOfWeekName": "Čtvrtek",
+    "date": "",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "4-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "4-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "4-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   },
+   {
+    "dayOfWeek": 5,
+    "dayOfWeekName": "Pátek",
+    "date": "",
+    "dayDescription": "",
+    "dayType": "WorkDay",
+    "atoms": [
+     {
+      "id": "5-1",
+      "hourId": 1,
+      "subjectId": "S1",
+      "subjectAbbrev": "MAT",
+      "subjectName": "Matematika",
+      "teacherName": "Nováková",
+      "teacherAbbrev": "Nov",
+      "roomId": "101",
+      "roomAbbrev": "101",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "5-2",
+      "hourId": 2,
+      "subjectId": "S2",
+      "subjectAbbrev": "ČJ",
+      "subjectName": "Český jazyk",
+      "teacherName": "Svobodová",
+      "teacherAbbrev": "Svo",
+      "roomId": "102",
+      "roomAbbrev": "102",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     },
+     {
+      "id": "5-3",
+      "hourId": 3,
+      "subjectId": "S3",
+      "subjectAbbrev": "ANJ",
+      "subjectName": "Anglický jazyk",
+      "teacherName": "Dvořák",
+      "teacherAbbrev": "Dvo",
+      "roomId": "201",
+      "roomAbbrev": "201",
+      "group": "",
+      "theme": "",
+      "cycle": "both",
+      "cycleIds": [],
+      "hasChange": false,
+      "change": null
+     }
+    ]
+   }
+  ]
+ }
+}

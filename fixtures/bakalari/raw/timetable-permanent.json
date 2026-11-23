@@ -1,0 +1,255 @@
+{
+ "Hours": [
+  {
+   "Id": 1,
+   "Caption": "1",
+   "BeginTime": "8:00",
+   "EndTime": "8:45"
+  },
+  {
+   "Id": 2,
+   "Caption": "2",
+   "BeginTime": "8:55",
+   "EndTime": "9:40"
+  },
+  {
+   "Id": 3,
+   "Caption": "3",
+   "BeginTime": "10:00",
+   "EndTime": "10:45"
+  },
+  {
+   "Id": 4,
+   "Caption": "4",
+   "BeginTime": "10:55",
+   "EndTime": "11:40"
+  }
+ ],
+ "Days": [
+  {
+   "Atoms": [
+    {
+     "HourId": 1,
+     "GroupIds": [],
+     "SubjectId": "M",
+     "TeacherId": "UA",
+     "RoomId": "R1",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    },
+    {
+     "HourId": 2,
+     "GroupIds": [],
+     "SubjectId": "CJ",
+     "TeacherId": "UB",
+     "RoomId": "R2",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    }
+   ],
+   "DayOfWeek": 1,
+   "Date": "",
+   "DayDescription": "",
+   "DayType": "WorkDay"
+  },
+  {
+   "Atoms": [
+    {
+     "HourId": 1,
+     "GroupIds": [],
+     "SubjectId": "M",
+     "TeacherId": "UA",
+     "RoomId": "R1",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    },
+    {
+     "HourId": 2,
+     "GroupIds": [],
+     "SubjectId": "CJ",
+     "TeacherId": "UB",
+     "RoomId": "R2",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    }
+   ],
+   "DayOfWeek": 2,
+   "Date": "",
+   "DayDescription": "",
+   "DayType": "WorkDay"
+  },
+  {
+   "Atoms": [
+    {
+     "HourId": 1,
+     "GroupIds": [],
+     "SubjectId": "M",
+     "TeacherId": "UA",
+     "RoomId": "R1",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    },
+    {
+     "HourId": 2,
+     "GroupIds": [],
+     "SubjectId": "CJ",
+     "TeacherId": "UB",
+     "RoomId": "R2",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    }
+   ],
+   "DayOfWeek": 3,
+   "Date": "",
+   "DayDescription": "",
+   "DayType": "WorkDay"
+  },
+  {
+   "Atoms": [
+    {
+     "HourId": 1,
+     "GroupIds": [],
+     "SubjectId": "M",
+     "TeacherId": "UA",
+     "RoomId": "R1",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    },
+    {
+     "HourId": 2,
+     "GroupIds": [],
+     "SubjectId": "CJ",
+     "TeacherId": "UB",
+     "RoomId": "R2",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    }
+   ],
+   "DayOfWeek": 4,
+   "Date": "",
+   "DayDescription": "",
+   "DayType": "WorkDay"
+  },
+  {
+   "Atoms": [
+    {
+     "HourId": 1,
+     "GroupIds": [],
+     "SubjectId": "M",
+     "TeacherId": "UA",
+     "RoomId": "R1",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    },
+    {
+     "HourId": 2,
+     "GroupIds": [],
+     "SubjectId": "CJ",
+     "TeacherId": "UB",
+     "RoomId": "R2",
+     "CycleIds": [],
+     "Change": null,
+     "HomeworkIds": [],
+     "Theme": null
+    }
+   ],
+   "DayOfWeek": 5,
+   "Date": "",
+   "DayDescription": "",
+   "DayType": "WorkDay"
+  }
+ ],
+ "Classes": [
+  {
+   "Id": "C3B",
+   "Abbrev": "3.B",
+   "Name": "3.B"
+  }
+ ],
+ "Groups": [],
+ "Subjects": [
+  {
+   "Id": "M",
+   "Abbrev": "M",
+   "Name": "Matematika"
+  },
+  {
+   "Id": "CJ",
+   "Abbrev": "ČJ",
+   "Name": "Český jazyk a literatura"
+  },
+  {
+   "Id": "AJ",
+   "Abbrev": "AJ",
+   "Name": "Anglický jazyk"
+  },
+  {
+   "Id": "F",
+   "Abbrev": "F",
+   "Name": "Fyzika"
+  }
+ ],
+ "Teachers": [
+  {
+   "Id": "UA",
+   "Abbrev": "Nov",
+   "Name": "Mgr. Jana Nováková"
+  },
+  {
+   "Id": "UB",
+   "Abbrev": "Svo",
+   "Name": "Mgr. Petr Svoboda"
+  },
+  {
+   "Id": "UC",
+   "Abbrev": "Dvo",
+   "Name": "Ing. Karel Dvořák"
+  },
+  {
+   "Id": "UD",
+   "Abbrev": "Čer",
+   "Name": "RNDr. Eva Černá"
+  }
+ ],
+ "Rooms": [
+  {
+   "Id": "R1",
+   "Abbrev": "101",
+   "Name": "Učebna 101"
+  },
+  {
+   "Id": "R2",
+   "Abbrev": "102",
+   "Name": "Učebna 102"
+  },
+  {
+   "Id": "R3",
+   "Abbrev": "201",
+   "Name": "Učebna 201"
+  },
+  {
+   "Id": "R4",
+   "Abbrev": "202",
+   "Name": "Učebna 202"
+  }
+ ],
+ "Cycles": []
+}

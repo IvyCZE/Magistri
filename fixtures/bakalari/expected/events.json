@@ -1,0 +1,24 @@
+[
+ {
+  "id": "E1-2026-10-09",
+  "title": "Lyžařský kurz",
+  "description": "Odjezd v 7:00",
+  "date": "2026-10-09",
+  "endDate": "2026-10-12",
+  "time": null,
+  "location": "Špindlerův Mlýn",
+  "organizer": "Novák",
+  "isPast": false
+ },
+ {
+  "id": "E2-2026-10-20",
+  "title": "Divadlo",
+  "description": "",
+  "date": "2026-10-20",
+  "endDate": null,
+  "time": "18:00 – 20:00",
+  "location": null,
+  "organizer": null,
+  "isPast": false
+ }
+]

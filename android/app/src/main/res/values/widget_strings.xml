@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_timetable_label">Timetable</string>
+    <string name="widget_timetable_description">Today\'s lessons with changes and the current lesson highlighted.</string>
+    <string name="widget_countdown_label">Lesson countdown</string>
+    <string name="widget_countdown_description">Time left in the current lesson or break.</string>
+    <string name="widget_countdown_day_label">School day countdown</string>
+    <string name="widget_countdown_day_description">Time left until school ends today.</string>
+    <string name="widget_marks_label">Marks</string>
+    <string name="widget_marks_description">Your latest marks.</string>
+    <string name="widget_messages_label">Messages</string>
+    <string name="widget_messages_description">Unread messages and the latest from school.</string>
+    <string name="widget_homework_label">Homework</string>
+    <string name="widget_homework_description">Active homework with deadlines.</string>
+    <string name="widget_events_label">Events</string>
+    <string name="widget_events_description">Upcoming school events.</string>
+</resources>

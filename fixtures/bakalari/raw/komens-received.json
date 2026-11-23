@@ -1,0 +1,31 @@
+{
+ "Messages": [
+  {
+   "Id": "K1",
+   "Title": "Třídní schůzky",
+   "Text": "<p>Schůzky se konají <b>15. 10.</b></p>",
+   "SentDate": "2026-10-05T08:12:00+02:00",
+   "Sender": {
+    "Id": "UA",
+    "Name": "Mgr. Jana Nováková"
+   },
+   "Unread": true,
+   "Attachments": []
+  },
+  {
+   "Id": "K2",
+   "Title": "Omluvenka",
+   "Text": "Děkuji",
+   "SentDate": "2026-10-01T17:30:00+02:00",
+   "Sender": "UB",
+   "Unread": false,
+   "Attachments": []
+  }
+ ],
+ "Persons": [
+  {
+   "Id": "UB",
+   "Name": "Mgr. Petr Svoboda"
+  }
+ ]
+}

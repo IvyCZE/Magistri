@@ -1,0 +1,347 @@
+[
+ {
+  "name": "mon-before-school",
+  "now": "2026-10-05T07:30:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-05",
+   "dayOfWeek": 1,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 3
+  },
+  "countdown": {
+   "state": "before_school",
+   "labelKey": "lessonStarts",
+   "holidayLabel": null,
+   "counterValue": "30:00",
+   "progress": 0
+  }
+ },
+ {
+  "name": "mon-before-school-day-time",
+  "now": "2026-10-05T07:30:00",
+  "nextWeekLoaded": true,
+  "mode": "day_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-05",
+   "dayOfWeek": 1,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 3
+  },
+  "countdown": {
+   "state": "before_school",
+   "labelKey": "schoolStarts",
+   "holidayLabel": null,
+   "counterValue": "00:30:00",
+   "progress": 0
+  }
+ },
+ {
+  "name": "tue-in-lesson",
+  "now": "2026-10-06T08:20:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-06",
+   "dayOfWeek": 2,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 4
+  },
+  "countdown": {
+   "state": "in_lesson",
+   "labelKey": "lessonEnds",
+   "holidayLabel": null,
+   "counterValue": "25:00",
+   "progress": 0.4444
+  }
+ },
+ {
+  "name": "tue-in-lesson-percent",
+  "now": "2026-10-06T08:20:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_percent",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-06",
+   "dayOfWeek": 2,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 4
+  },
+  "countdown": {
+   "state": "in_lesson",
+   "labelKey": "lessonEnds",
+   "holidayLabel": null,
+   "counterValue": "44.44 %",
+   "progress": 0.4444
+  }
+ },
+ {
+  "name": "tue-in-lesson-percent-rounded",
+  "now": "2026-10-06T08:20:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_percent",
+  "hideDecimals": true,
+  "selection": {
+   "date": "2026-10-06",
+   "dayOfWeek": 2,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 4
+  },
+  "countdown": {
+   "state": "in_lesson",
+   "labelKey": "lessonEnds",
+   "holidayLabel": null,
+   "counterValue": "44 %",
+   "progress": 0.4444
+  }
+ },
+ {
+  "name": "tue-break",
+  "now": "2026-10-06T08:50:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-06",
+   "dayOfWeek": 2,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 4
+  },
+  "countdown": {
+   "state": "break",
+   "labelKey": "breakEnds",
+   "holidayLabel": null,
+   "counterValue": "05:00",
+   "progress": 0.5
+  }
+ },
+ {
+  "name": "tue-day-time",
+  "now": "2026-10-06T10:30:00",
+  "nextWeekLoaded": true,
+  "mode": "day_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-06",
+   "dayOfWeek": 2,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 4
+  },
+  "countdown": {
+   "state": "day_time",
+   "labelKey": "schoolEnds",
+   "holidayLabel": null,
+   "counterValue": "01:10:00",
+   "progress": 0.6818
+  }
+ },
+ {
+  "name": "tue-after-school",
+  "now": "2026-10-06T12:00:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-07",
+   "dayOfWeek": 3,
+   "isPerm": false,
+   "isToday": false,
+   "isTomorrow": true,
+   "isNextMonday": false,
+   "lessonCount": 0
+  },
+  "countdown": {
+   "state": "school_over",
+   "labelKey": "schoolEnds",
+   "holidayLabel": null,
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ },
+ {
+  "name": "wed-holiday",
+  "now": "2026-10-07T10:00:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-07",
+   "dayOfWeek": 3,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 0
+  },
+  "countdown": {
+   "state": "weekend_or_free",
+   "labelKey": "holiday",
+   "holidayLabel": "Podzimní prázdniny",
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ },
+ {
+  "name": "wed-holiday-evening",
+  "now": "2026-10-07T18:00:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-08",
+   "dayOfWeek": 4,
+   "isPerm": false,
+   "isToday": false,
+   "isTomorrow": true,
+   "isNextMonday": false,
+   "lessonCount": 2
+  },
+  "countdown": {
+   "state": "weekend_or_free",
+   "labelKey": "holiday",
+   "holidayLabel": "Podzimní prázdniny",
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ },
+ {
+  "name": "thu-day-percent",
+  "now": "2026-10-08T09:00:00",
+  "nextWeekLoaded": true,
+  "mode": "day_percent",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-08",
+   "dayOfWeek": 4,
+   "isPerm": false,
+   "isToday": true,
+   "isTomorrow": false,
+   "isNextMonday": false,
+   "lessonCount": 2
+  },
+  "countdown": {
+   "state": "day_percent",
+   "labelKey": "schoolEnds",
+   "holidayLabel": null,
+   "counterValue": "60.00 %",
+   "progress": 0.6
+  }
+ },
+ {
+  "name": "fri-after-school-next-week-loaded",
+  "now": "2026-10-09T15:00:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-12",
+   "dayOfWeek": 1,
+   "isPerm": false,
+   "isToday": false,
+   "isTomorrow": false,
+   "isNextMonday": true,
+   "lessonCount": 2
+  },
+  "countdown": {
+   "state": "school_over",
+   "labelKey": "schoolEnds",
+   "holidayLabel": null,
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ },
+ {
+  "name": "fri-after-school-permanent-fallback",
+  "now": "2026-10-09T15:00:00",
+  "nextWeekLoaded": false,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-12",
+   "dayOfWeek": 1,
+   "isPerm": true,
+   "isToday": false,
+   "isTomorrow": false,
+   "isNextMonday": true,
+   "lessonCount": 3
+  },
+  "countdown": {
+   "state": "school_over",
+   "labelKey": "schoolEnds",
+   "holidayLabel": null,
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ },
+ {
+  "name": "sat",
+  "now": "2026-10-10T10:00:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-12",
+   "dayOfWeek": 1,
+   "isPerm": false,
+   "isToday": false,
+   "isTomorrow": false,
+   "isNextMonday": true,
+   "lessonCount": 2
+  },
+  "countdown": {
+   "state": "weekend_or_free",
+   "labelKey": "weekendFree",
+   "holidayLabel": null,
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ },
+ {
+  "name": "sun-evening",
+  "now": "2026-10-11T18:00:00",
+  "nextWeekLoaded": true,
+  "mode": "lesson_time",
+  "hideDecimals": false,
+  "selection": {
+   "date": "2026-10-12",
+   "dayOfWeek": 1,
+   "isPerm": false,
+   "isToday": false,
+   "isTomorrow": true,
+   "isNextMonday": false,
+   "lessonCount": 2
+  },
+  "countdown": {
+   "state": "weekend_or_free",
+   "labelKey": "weekendFree",
+   "holidayLabel": null,
+   "counterValue": "00:00",
+   "progress": 1
+  }
+ }
+]

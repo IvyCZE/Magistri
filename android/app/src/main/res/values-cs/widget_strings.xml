@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_timetable_label">Rozvrh</string>
+    <string name="widget_timetable_description">Dnešní hodiny se změnami a zvýrazněnou probíhající hodinou.</string>
+    <string name="widget_countdown_label">Odpočet hodiny</string>
+    <string name="widget_countdown_description">Čas do konce hodiny nebo přestávky.</string>
+    <string name="widget_countdown_day_label">Odpočet školy</string>
+    <string name="widget_countdown_day_description">Čas do konce dnešní výuky.</string>
+    <string name="widget_marks_label">Známky</string>
+    <string name="widget_marks_description">Nejnovější známky.</string>
+    <string name="widget_messages_label">Zprávy</string>
+    <string name="widget_messages_description">Nepřečtené zprávy a nejnovější zprávy ze školy.</string>
+    <string name="widget_homework_label">Úkoly</string>
+    <string name="widget_homework_description">Aktivní úkoly s termíny.</string>
+    <string name="widget_events_label">Akce</string>
+    <string name="widget_events_description">Nadcházející školní akce.</string>
+</resources>

@@ -1,0 +1,11 @@
+services:
+  bakalari-expressive:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bakalari-expressive
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production

@@ -1,0 +1,538 @@
+[
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "",
+   "atomsCount": 1
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "Celebration",
+   "dayDescription": "Den vzniku samostatného československého státu",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": true,
+   "type": "celebration",
+   "title": "Den vzniku samostatného československého státu",
+   "badgeLabel": "Státní svátek",
+   "shortBadgeLabel": "Svátek",
+   "description": "Státní svátek — v tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Celebration",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": true,
+   "type": "celebration",
+   "title": "Státní svátek",
+   "badgeLabel": "Státní svátek",
+   "shortBadgeLabel": "Svátek",
+   "description": "Státní svátek — v tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Holiday",
+   "dayDescription": "Podzimní prázdniny",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "holiday",
+   "title": "Podzimní prázdniny",
+   "badgeLabel": "Prázdniny",
+   "shortBadgeLabel": "Prázdniny",
+   "description": "Školní prázdniny — volný den."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Holiday",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "holiday",
+   "title": "Prázdniny",
+   "badgeLabel": "Prázdniny",
+   "shortBadgeLabel": "Prázdniny",
+   "description": "Školní prázdniny — volný den."
+  }
+ },
+ {
+  "input": {
+   "dayType": "DirectorDay",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "director",
+   "title": "Ředitelské volno",
+   "badgeLabel": "Ředitelské volno",
+   "shortBadgeLabel": "Řed. volno",
+   "description": "Ředitelské volno — v tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "DirectorDay",
+   "dayDescription": "Ředitelské volno - škola v přírodě",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "director",
+   "title": "Ředitelské volno - škola v přírodě",
+   "badgeLabel": "Ředitelské volno",
+   "shortBadgeLabel": "Řed. volno",
+   "description": "Ředitelské volno — v tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Státní svátek",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": true,
+   "type": "celebration",
+   "title": "Státní svátek",
+   "badgeLabel": "Státní svátek",
+   "shortBadgeLabel": "Svátek",
+   "description": "Státní svátek — v tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Vánoční prázdniny",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "holiday",
+   "title": "Vánoční prázdniny",
+   "badgeLabel": "Prázdniny",
+   "shortBadgeLabel": "Prázdniny",
+   "description": "Školní prázdniny — volný den."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Volno ředitele školy",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "director",
+   "title": "Volno ředitele školy",
+   "badgeLabel": "Ředitelské volno",
+   "shortBadgeLabel": "Řed. volno",
+   "description": "Ředitelské volno — v tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Sportovní den",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "custom",
+   "title": "Sportovní den",
+   "badgeLabel": "Volný den",
+   "shortBadgeLabel": "Volno",
+   "description": "V tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Sportovní den",
+   "atomsCount": 3
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "Weekend",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "Undefined",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "custom",
+   "title": "Volný den",
+   "badgeLabel": "Volný den",
+   "shortBadgeLabel": "Volno",
+   "description": "V tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Other",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "custom",
+   "title": "Volný den",
+   "badgeLabel": "Volný den",
+   "shortBadgeLabel": "Volno",
+   "description": "V tento den se nevyučuje."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "cs",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "",
+   "atomsCount": 1
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "Celebration",
+   "dayDescription": "Den vzniku samostatného československého státu",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": true,
+   "type": "celebration",
+   "title": "Den vzniku samostatného československého státu",
+   "badgeLabel": "Public Holiday",
+   "shortBadgeLabel": "Holiday",
+   "description": "Public holiday — no classes scheduled."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Celebration",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": true,
+   "type": "celebration",
+   "title": "Public Holiday",
+   "badgeLabel": "Public Holiday",
+   "shortBadgeLabel": "Holiday",
+   "description": "Public holiday — no classes scheduled."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Holiday",
+   "dayDescription": "Podzimní prázdniny",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "holiday",
+   "title": "Podzimní prázdniny",
+   "badgeLabel": "School Break",
+   "shortBadgeLabel": "Break",
+   "description": "School holiday / vacation — free day."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Holiday",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "holiday",
+   "title": "School Break",
+   "badgeLabel": "School Break",
+   "shortBadgeLabel": "Break",
+   "description": "School holiday / vacation — free day."
+  }
+ },
+ {
+  "input": {
+   "dayType": "DirectorDay",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "director",
+   "title": "Director's Day Off",
+   "badgeLabel": "Director's Day Off",
+   "shortBadgeLabel": "Day Off",
+   "description": "Director's day off — no classes scheduled."
+  }
+ },
+ {
+  "input": {
+   "dayType": "DirectorDay",
+   "dayDescription": "Ředitelské volno - škola v přírodě",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "director",
+   "title": "Ředitelské volno - škola v přírodě",
+   "badgeLabel": "Director's Day Off",
+   "shortBadgeLabel": "Day Off",
+   "description": "Director's day off — no classes scheduled."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Státní svátek",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": true,
+   "type": "celebration",
+   "title": "Státní svátek",
+   "badgeLabel": "Public Holiday",
+   "shortBadgeLabel": "Holiday",
+   "description": "Public holiday — no classes scheduled."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Vánoční prázdniny",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "holiday",
+   "title": "Vánoční prázdniny",
+   "badgeLabel": "School Break",
+   "shortBadgeLabel": "Break",
+   "description": "School holiday / vacation — free day."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Volno ředitele školy",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "director",
+   "title": "Volno ředitele školy",
+   "badgeLabel": "Director's Day Off",
+   "shortBadgeLabel": "Day Off",
+   "description": "Director's day off — no classes scheduled."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Sportovní den",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "custom",
+   "title": "Sportovní den",
+   "badgeLabel": "Day Off",
+   "shortBadgeLabel": "Day Off",
+   "description": "No classes scheduled on this day."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "Sportovní den",
+   "atomsCount": 3
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "Weekend",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ },
+ {
+  "input": {
+   "dayType": "Undefined",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "custom",
+   "title": "Day Off",
+   "badgeLabel": "Day Off",
+   "shortBadgeLabel": "Day Off",
+   "description": "No classes scheduled on this day."
+  }
+ },
+ {
+  "input": {
+   "dayType": "Other",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": true,
+   "isPublicHoliday": false,
+   "type": "custom",
+   "title": "Day Off",
+   "badgeLabel": "Day Off",
+   "shortBadgeLabel": "Day Off",
+   "description": "No classes scheduled on this day."
+  }
+ },
+ {
+  "input": {
+   "dayType": "WorkDay",
+   "dayDescription": "",
+   "atomsCount": 0
+  },
+  "lang": "en",
+  "expected": {
+   "isHoliday": false,
+   "isPublicHoliday": false,
+   "type": null,
+   "title": "",
+   "badgeLabel": "",
+   "shortBadgeLabel": ""
+  }
+ }
+]

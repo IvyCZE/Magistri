@@ -1,0 +1,12 @@
+{
+ "Messages": [
+  {
+   "Id": "N1",
+   "Title": "Ředitelské volno",
+   "Text": "Dne 7. 10. je ředitelské volno",
+   "SentDate": "2026-10-03T09:00:00+02:00",
+   "Unread": true,
+   "CanConfirm": false
+  }
+ ]
+}
