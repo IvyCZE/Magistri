@@ -79,13 +79,14 @@ class SyncEngine(
             }
         }
 
-        val nextMonday = now.toLocalDate().with(TemporalAdjusters.next(DayOfWeek.MONDAY)).toString()
+        val today = now.toLocalDate()
+        val nextMonday = today.with(TemporalAdjusters.next(DayOfWeek.MONDAY)).toString()
         try {
             val actualRaw = fetch("timetableActual", "/api/3/timetable/actual") as? JSONObject
             val nextRaw = fetch("timetableNext", "/api/3/timetable/actual?date=$nextMonday") as? JSONObject
             val permanentRaw = fetch("timetablePermanent", "/api/3/timetable/permanent") as? JSONObject
             val marksRaw = fetch("marks", "/api/3/marks") as? JSONObject
-            val homeworkRaw = fetch("homework", "/api/3/homeworks") as? JSONObject
+            val homeworkRaw = fetch("homework", "/api/3/homeworks?from=${today.minusDays(365)}&to=${today.plusDays(90)}") as? JSONObject
             val receivedRaw = fetch("messagesReceived", "/api/3/komens/messages/received", komens = true)
             val noticeboardRaw = fetch("messagesNoticeboard", "/api/3/komens/messages/noticeboard", komens = true)
             val eventsRaw = fetch("events", "/api/3/events") as? JSONObject
@@ -94,20 +95,19 @@ class SyncEngine(
 
             state.setSessionState(SessionState.OK)
             val local = state.localData()
-            val today = now.toLocalDate()
 
             val actual = actualRaw?.let { TimetableParser.parse(it, false, today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString()) } ?: previous?.timetableActual
             val next = nextRaw?.let { TimetableParser.parse(it, false, nextMonday) } ?: previous?.timetableNext
             val permanent = permanentRaw?.let { TimetableParser.parse(it, true) } ?: previous?.timetablePermanent
 
             val allMarks = marksRaw?.let { MarksParser.parse(it, today) }
-            val allApiHomework = homeworkRaw?.let { HomeworkParser.parse(it) }
+            val allApiHomework = homeworkRaw?.takeIf { it.optJSONArray("Homeworks") != null }?.let { HomeworkParser.parse(it) }
             val allMessages = if (receivedRaw != null || noticeboardRaw != null) MessagesParser.parse(receivedRaw, noticeboardRaw) else null
             val events = eventsRaw?.let { EventsParser.parse(it, now) }
 
             val homework = allApiHomework?.let { api ->
                 (local.customHomework + api.map { it.copy(done = local.homeworkDone[it.id] ?: it.done) })
-                    .filter { !it.done }
+                    .filter { !it.done && it.isUpcoming(today) }
                     .sortedWith(compareBy({ it.deadline.isEmpty() }, { it.deadline }))
                     .take(MAX_HOMEWORK)
             }
@@ -127,10 +127,15 @@ class SyncEngine(
             )
             snapshots.save(snapshot)
 
+            val newHomework = allApiHomework?.let { list ->
+                val upcoming = list.filter { it.isUpcoming(today) }
+                val fresh = diff(SeenCategory.HOMEWORK, upcoming.map { it.id })
+                upcoming.filter { it.id in fresh && !(local.homeworkDone[it.id] ?: it.done) }
+            }.orEmpty()
             val newItems = NewItems(
                 marks = allMarks?.let { list -> diff(SeenCategory.MARKS, list.map { it.id }).let { ids -> list.filter { it.id in ids } } } ?: emptyList(),
                 messages = allMessages?.let { list -> diff(SeenCategory.MESSAGES, list.map { it.id }).let { ids -> list.filter { it.id in ids && it.unread } } } ?: emptyList(),
-                homework = allApiHomework?.let { list -> diff(SeenCategory.HOMEWORK, list.map { it.id }).let { ids -> list.filter { it.id in ids && !(local.homeworkDone[it.id] ?: it.done) } } } ?: emptyList(),
+                homework = newHomework,
                 timetableChanges = timetableChanges(now, actual, permanent, next, prefs.language),
             )
             return SyncOutcome.Updated(newItems, partial = failures > 0)

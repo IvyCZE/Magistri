@@ -334,21 +334,19 @@ data class MessagesModel(val unreadText: String, val unreadCount: Int, val rows:
     }
 }
 
-data class HomeworkRow(val subject: String, val content: String, val deadlineText: String, val overdue: Boolean)
+data class HomeworkRow(val subject: String, val content: String, val deadlineText: String)
 
 data class HomeworkModel(val rows: List<HomeworkRow>, val total: Int, val emptyText: String?) {
     companion object {
         fun build(input: WidgetInputs): HomeworkModel {
             val t = input.text
             val today = input.now.toLocalDate()
-            val all = input.snapshot?.homework.orEmpty().filter { !it.done }
+            val all = input.snapshot?.homework.orEmpty().filter { !it.done && it.isUpcoming(today) }
             val rows = all.map { h ->
-                val deadline = runCatching { LocalDate.parse(h.deadline.take(10)) }.getOrNull()
                 HomeworkRow(
                     h.subjectName.ifEmpty { h.subjectAbbrev },
                     h.content.trim().replace(Regex("\\s+"), " "),
-                    deadline?.let { t.pick("do ", "due ") + t.relativeDay(it, today) } ?: "",
-                    deadline != null && deadline.isBefore(today),
+                    h.deadlineDate?.let { t.pick("do ", "due ") + t.relativeDay(it, today) } ?: "",
                 )
             }
             return HomeworkModel(rows, rows.size, if (rows.isEmpty()) t.noHomework else null)

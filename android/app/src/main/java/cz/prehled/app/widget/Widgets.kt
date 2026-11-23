@@ -367,8 +367,7 @@ private fun HomeworkContent(input: WidgetInputs, colors: WidgetColors) {
                     Text(row.content, style = textStyle(colors.cp("onSurfaceVariant"), 11), maxLines = 1)
                 }
                 if (row.deadlineText.isNotEmpty()) {
-                    if (row.overdue) Pill(row.deadlineText, colors.cp("errorContainer"), colors.cp("onErrorContainer"))
-                    else Text(row.deadlineText, style = textStyle(colors.cp("onSurfaceVariant"), 11), maxLines = 1)
+                    Text(row.deadlineText, style = textStyle(colors.cp("onSurfaceVariant"), 11), maxLines = 1)
                 }
             }
         }

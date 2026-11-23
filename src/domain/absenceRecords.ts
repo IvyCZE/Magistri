@@ -1,4 +1,6 @@
 import type { AbsenceRecord } from '../types/bakalari';
+import { groupBySchoolWeek } from './schoolWeeks';
+export { weekStart } from './schoolWeeks';
 
 type AbsenceType = AbsenceRecord['type'];
 
@@ -47,13 +49,6 @@ export type DayHours = Partial<Record<AbsenceType, DayLesson[]>>;
 
 const dateOnly = (value: unknown): string => (typeof value === 'string' ? value.split('T')[0] : '');
 const subjectKey = (name: unknown): string => String(name ?? '').trim().toLowerCase();
-
-/** Monday of the week that holds `date` (YYYY-MM-DD), as the timetable endpoint wants it. */
-export function weekStart(date: string): string {
-  const d = new Date(`${date}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
-  return d.toISOString().slice(0, 10);
-}
 
 /** Lessons the student actually had on a day, from a `/api/3/timetable/actual` answer. */
 export function lessonsOfDay(timetable: any, date: string): DayLesson[] {
@@ -308,32 +303,7 @@ export function buildAbsenceRecords(rawAbsences: any[], hoursByDate: Map<string,
   return records;
 }
 
-export interface AbsenceWeek {
-  /** Monday of the week (YYYY-MM-DD), or '' for records without a valid date. */
-  start: string;
-  /** Friday of the week, or Sunday when a record falls on the weekend. */
-  end: string;
-  records: AbsenceRecord[];
-}
-
-const addDays = (date: string, days: number): string => {
-  const d = new Date(`${date}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
 /** Groups records by school week, newest week first; weeks without a record do not appear. */
-export function groupRecordsByWeek(records: AbsenceRecord[]): AbsenceWeek[] {
-  const byStart = new Map<string, AbsenceRecord[]>();
-  for (const rec of records) {
-    const start = /^\d{4}-\d{2}-\d{2}$/.test(rec.date) ? weekStart(rec.date) : '';
-    byStart.set(start, [...(byStart.get(start) || []), rec]);
-  }
-  return [...byStart.entries()]
-    .sort(([a], [b]) => b.localeCompare(a))
-    .map(([start, weekRecords]) => {
-      if (!start) return { start, end: '', records: weekRecords };
-      const weekend = weekRecords.some((r) => r.date > addDays(start, 4));
-      return { start, end: addDays(start, weekend ? 6 : 4), records: weekRecords };
-    });
+export function groupRecordsByWeek(records: AbsenceRecord[]) {
+  return groupBySchoolWeek(records, (record) => record.date);
 }

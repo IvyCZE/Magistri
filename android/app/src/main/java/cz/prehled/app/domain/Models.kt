@@ -1,5 +1,7 @@
 package cz.prehled.app.domain
 
+import java.time.LocalDate
+
 data class Hour(val id: Int, val caption: String, val beginTime: String, val endTime: String)
 
 data class LessonChange(
@@ -80,7 +82,13 @@ data class Homework(
     val date: String,
     val deadline: String,
     val done: Boolean,
-)
+    val closed: Boolean = false,
+) {
+    val deadlineDate: LocalDate?
+        get() = runCatching { LocalDate.parse(deadline.take(10)) }.getOrNull()
+
+    fun isUpcoming(today: LocalDate) = !closed && deadlineDate?.isBefore(today) != true
+}
 
 data class Message(
     val id: String,

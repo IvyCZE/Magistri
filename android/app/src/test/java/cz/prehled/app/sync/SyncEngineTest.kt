@@ -75,6 +75,28 @@ class SyncEngineTest {
         assertEquals(2, snap.events.size)
         assertTrue(snap.timetablePermanent!!.days.isNotEmpty())
         assertTrue(api.calls.any { it.startsWith("/api/3/timetable/actual?date=2026-10-12") })
+        assertTrue("/api/3/homeworks?from=2025-10-06&to=2027-01-04" in api.calls)
+    }
+
+    @Test
+    fun expandingHomeworkRangeSeedsSilentlyAndOnlyNotifiesNewOpenAssignments() {
+        val oldSeen = tmp.newFile("old-seen.json").also { it.writeText("""{"homework":["known"]}""") }
+        seen = FileSeenStore(oldSeen)
+        val homework = JSONObject("""{"Homeworks":[
+            {"ID":"long-running","DateStart":"2026-08-01","DateEnd":"2026-10-09"},
+            {"ID":"overdue","DateStart":"2026-09-01","DateEnd":"2026-10-05"}
+        ]}""")
+        api.responses["/api/3/homeworks"] = ApiResult.Ok(homework)
+
+        assertTrue((engine().sync() as SyncOutcome.Updated).newItems.homework.isEmpty())
+        assertEquals(listOf("long-running"), snapshots.load()!!.homework.map { it.id })
+
+        homework.getJSONArray("Homeworks")
+            .put(JSONObject("""{"ID":"closed","DateEnd":"2026-10-09","Closed":true}"""))
+            .put(JSONObject("""{"ID":"new","DateEnd":"2026-10-06"}"""))
+        val outcome = engine().sync() as SyncOutcome.Updated
+        assertEquals(listOf("new"), outcome.newItems.homework.map { it.id })
+        assertEquals(listOf("new", "long-running"), snapshots.load()!!.homework.map { it.id })
     }
 
     @Test

@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
-import { parseAttachments } from './client';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { bakalariApi, parseAttachments } from './client';
+import { rememberDirectorySchools } from './schoolDirectory';
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('parseAttachments', () => {
   it('maps the Bakaláři Attachments array', () => {
@@ -21,4 +24,27 @@ describe('parseAttachments', () => {
     expect(parseAttachments(undefined)).toEqual([]);
     expect(parseAttachments('x')).toEqual([]);
   });
+});
+
+it('keeps downloadable attachments in received, noticeboard and sent messages', async () => {
+  const files = {
+    received: { Id: 'P1', Name: 'obrazek.png', Type: 'image/png' },
+    noticeboard: { Id: 'P2', Name: 'oznameni.pdf', Type: 'application/pdf' },
+    sent: { Id: 'P3', FileName: 'informace.docx' },
+  };
+  rememberDirectorySchools([{ id: 'test-school', schoolUrl: 'https://school.example' }]);
+  bakalariApi.setTokens({
+    accessToken: 'test', refreshToken: 'test', userId: 'test', schoolUrl: 'https://school.example',
+    expiresIn: 3600, obtainedAt: Date.now(), tokenType: 'Bearer',
+  });
+  vi.stubGlobal('fetch', async (input: string) => {
+    const type = input.split('/').at(-1) as keyof typeof files;
+    return Response.json(type in files ? { Messages: [{ Id: type, Attachments: [files[type], { Name: 'missing-id' }] }] } : {});
+  });
+
+  const messages = await bakalariApi.getMessages();
+  const firstAttachment = (type: keyof typeof files) => messages.find((message) => message.type === type)?.attachments;
+  expect(firstAttachment('received')).toEqual([{ id: 'P1', name: 'obrazek.png', mimeType: 'image/png' }]);
+  expect(firstAttachment('noticeboard')).toEqual([{ id: 'P2', name: 'oznameni.pdf', mimeType: 'application/pdf' }]);
+  expect(firstAttachment('sent')).toEqual([{ id: 'P3', name: 'informace.docx' }]);
 });

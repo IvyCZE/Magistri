@@ -126,9 +126,9 @@ object SnapshotJson {
     private fun mark(o: JSONObject) = Mark(o.str("id"), o.str("abbrev"), o.str("subject"), o.str("text"), o.optInt("weight", 1), o.str("caption"), o.str("date"), o.optBoolean("new"), o.str("rank"))
 
     private fun homework(h: Homework) = JSONObject().put("id", h.id).put("abbrev", h.subjectAbbrev).put("subject", h.subjectName)
-        .put("content", h.content).put("date", h.date).put("deadline", h.deadline).put("done", h.done)
+        .put("content", h.content).put("date", h.date).put("deadline", h.deadline).put("done", h.done).put("closed", h.closed)
 
-    private fun homework(o: JSONObject) = Homework(o.str("id"), o.str("abbrev"), o.str("subject"), o.str("content"), o.str("date"), o.str("deadline"), o.optBoolean("done"))
+    private fun homework(o: JSONObject) = Homework(o.str("id"), o.str("abbrev"), o.str("subject"), o.str("content"), o.str("date"), o.str("deadline"), o.optBoolean("done"), o.optBoolean("closed"))
 
     private fun message(m: Message) = JSONObject().put("id", m.id).put("type", m.type).put("title", m.title)
         .put("sender", m.senderName).put("date", m.date).put("unread", m.unread)

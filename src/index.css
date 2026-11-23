@@ -192,6 +192,15 @@
   --m3-surface-container-highest: #222227;
 }
 
+.navigation-surface {
+  background-color: var(--m3-surface-container);
+  background-color: color-mix(in srgb, var(--m3-surface-container) 95%, transparent);
+}
+
+.dark .navigation-surface-floating {
+  background-color: color-mix(in srgb, var(--m3-surface-container) 90%, transparent);
+}
+
 /* No scrollbars anywhere: scrolling works as before, only the indicator is hidden */
 * {
   -webkit-tap-highlight-color: transparent;

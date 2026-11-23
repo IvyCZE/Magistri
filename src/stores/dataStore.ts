@@ -42,6 +42,8 @@ import { getHolidayInfo } from '../utils/holidayUtils';
 import type { MarkOverride } from '../domain/markSimulation';
 import { mondayOfTimetable, pruneWeeks } from '../domain/timetableCache';
 import { SENT_EXCUSES_KEY } from '../domain/sentExcuses';
+import { homeworkStatus } from '../domain/homework';
+import { toIsoDate } from '../domain/time';
 
 export interface SimulatedMark {
   id: string;
@@ -2021,7 +2023,8 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   getActiveHomeworksCount: () => {
-    return get().homeworks.filter((h) => !h.done).length;
+    const today = toIsoDate(new Date());
+    return get().homeworks.filter((h) => homeworkStatus(h, today) === 'active').length;
   },
 
   clearCache: () => {

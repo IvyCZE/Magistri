@@ -16,16 +16,16 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { formatCzechDate } from '../utils/dateUtils';
 import { Homework } from '../types/bakalari';
 import { AttachmentRow } from '../components/common/AttachmentRow';
+import { homeworkStatus, homeworkWeeks, type HomeworkStatus } from '../domain/homework';
+import { shiftIsoDate, toIsoDate } from '../domain/time';
+import { groupRadius } from '../utils/groupRadius';
 
-type HomeworkTab = 'active' | 'past';
-
-const getTomorrowStr = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().split('T')[0];
-};
-
-const getTodayStr = () => new Date().toISOString().split('T')[0];
+const TABS = ['active', 'overdue', 'closed'] as const;
+const TAB_TEXT = {
+  active: { label: 'tabActive', empty: 'noActiveHomework' },
+  overdue: { label: 'tabOverdueHomework', empty: 'noOverdueHomework' },
+  closed: { label: 'closedHomework', empty: 'noClosedHomework' },
+} as const;
 
 export const HomeworkPage: React.FC = () => {
   const {
@@ -38,8 +38,9 @@ export const HomeworkPage: React.FC = () => {
     deleteCustomHomework,
   } = useDataStore();
   const { t } = useSettingsStore();
+  const today = toIsoDate(new Date());
 
-  const [activeTab, setActiveTab] = useState<HomeworkTab>('active');
+  const [activeTab, setActiveTab] = useState<HomeworkStatus>('active');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,7 +102,7 @@ export const HomeworkPage: React.FC = () => {
     setSelectedSubjectKey(firstSubj);
     setCustomSubjectAbbrev('');
     setCustomSubjectName('');
-    setDeadlineDate(getTomorrowStr());
+    setDeadlineDate(shiftIsoDate(today, 1));
     setContent('');
     setErrorMessage('');
     setIsModalOpen(true);
@@ -119,7 +120,7 @@ export const HomeworkPage: React.FC = () => {
       setCustomSubjectAbbrev(hw.subjectAbbrev);
       setCustomSubjectName(hw.subjectName);
     }
-    setDeadlineDate(hw.deadline || getTodayStr());
+    setDeadlineDate(hw.deadline || today);
     setContent(hw.content || '');
     setErrorMessage('');
     setIsModalOpen(true);
@@ -168,7 +169,7 @@ export const HomeworkPage: React.FC = () => {
         subjectName,
         teacherName: '',
         content: content.trim(),
-        date: getTodayStr(),
+        date: today,
         deadline: deadlineDate,
         done: false,
       });
@@ -183,21 +184,12 @@ export const HomeworkPage: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // Sort active homeworks by deadline ascending (shortest time left first)
-  const activeHomeworks = useMemo(() => {
-    return [...homeworks]
-      .filter((h) => !h.done)
-      .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
-  }, [homeworks]);
-
-  // Sort past homeworks by deadline descending (most recently due/done first)
-  const pastHomeworks = useMemo(() => {
-    return [...homeworks]
-      .filter((h) => h.done)
-      .sort((a, b) => (b.deadline || '').localeCompare(a.deadline || ''));
-  }, [homeworks]);
-
-  const displayList = activeTab === 'active' ? activeHomeworks : pastHomeworks;
+  const byStatus = useMemo(() => {
+    const lists: Record<HomeworkStatus, Homework[]> = { active: [], overdue: [], closed: [] };
+    for (const homework of homeworks) lists[homeworkStatus(homework, today)].push(homework);
+    return lists;
+  }, [homeworks, today]);
+  const weeks = useMemo(() => homeworkWeeks(byStatus[activeTab], activeTab), [byStatus, activeTab]);
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-5 flex flex-col gap-5">
@@ -213,34 +205,27 @@ export const HomeworkPage: React.FC = () => {
 
       {/* Header Bar: Segmented Pill Tabs + Add Button */}
       <div className="flex items-center justify-between gap-2 sm:gap-3">
-        {/* Segmented Pill Tabs: Active vs Past */}
-        <div className="flex items-center p-1.5 rounded-full bg-m3-surface-container gap-1 min-w-0 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold font-display whitespace-nowrap transition-all m3-pressable flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'active'
-                ? 'bg-m3-primary text-m3-on-primary shadow-xs'
-                : 'text-m3-on-surface-variant hover:text-m3-on-surface'
-            }`}
-          >
-            <span>{t('tabActive')}</span>
-            {activeHomeworks.length > 0 && (
-              <span className="px-1.5 py-0.2 text-[10px] font-black rounded-full bg-m3-surface/30">
-                {activeHomeworks.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('past')}
-            className={`px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold font-display whitespace-nowrap transition-all m3-pressable shrink-0 ${
-              activeTab === 'past'
-                ? 'bg-m3-primary text-m3-on-primary shadow-xs'
-                : 'text-m3-on-surface-variant hover:text-m3-on-surface'
-            }`}
-          >
-            {t('tabPast')}
-          </button>
+        <div className="flex items-center p-1 sm:p-1.5 rounded-full bg-m3-surface-container gap-0.5 sm:gap-1 min-w-0 overflow-x-auto no-scrollbar">
+          {TABS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={activeTab === id}
+              onClick={() => setActiveTab(id)}
+              className={`px-2 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold font-display whitespace-nowrap transition-all m3-pressable flex items-center gap-1 shrink-0 ${
+                activeTab === id
+                  ? 'bg-m3-primary text-m3-on-primary shadow-xs'
+                  : 'text-m3-on-surface-variant hover:text-m3-on-surface'
+              }`}
+            >
+              <span>{t(TAB_TEXT[id].label)}</span>
+              {id === 'active' && byStatus.active.length > 0 && (
+                <span className="px-1 sm:px-1.5 text-[10px] font-black rounded-full bg-m3-surface/30">
+                  {byStatus.active.length}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* + Přidat Button */}
@@ -256,113 +241,119 @@ export const HomeworkPage: React.FC = () => {
       </div>
 
       {/* Homework Cards List */}
-      <div className="flex flex-col gap-3">
-        {displayList.length === 0 ? (
+      <div className="flex flex-col gap-4">
+        {weeks.length === 0 ? (
           <div className="py-12 flex flex-col items-center justify-center text-center gap-2 rounded-m3-2xl bg-m3-surface-container text-m3-on-surface-variant">
             <CheckCircle2 className="w-10 h-10 text-m3-on-surface-variant/40" />
             <span className="text-sm font-bold font-display text-m3-on-surface">
-              {activeTab === 'active'
-                ? t('noActiveHomework')
-                : t('noPastHomework')}
+              {t(TAB_TEXT[activeTab].empty)}
             </span>
           </div>
         ) : (
-          displayList.map((hw) => (
-            <div
-              key={hw.id}
-              className={`p-4 sm:p-5 rounded-m3-2xl transition-all flex items-start gap-4 shadow-xs ${
-                hw.done
-                  ? 'bg-m3-surface-container/60 opacity-75'
-                  : 'bg-m3-surface-container hover:bg-m3-surface-container-high'
-              }`}
-            >
-              {/* Checkbox button */}
-              <button
-                onClick={() => toggleHomeworkDone(hw.id)}
-                className="mt-1 text-m3-primary hover:text-emerald-500 transition-colors m3-pressable shrink-0"
-                title={hw.done ? t('markAsUndone') : t('markAsDone')}
-              >
-                {hw.done ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-500 fill-emerald-500/20" />
-                ) : (
-                  <Circle className="w-6 h-6 text-m3-outline hover:text-m3-primary" />
-                )}
-              </button>
-
-              {/* Homework Body */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-m3-primary-container text-m3-on-primary-container font-display">
-                      {hw.subjectAbbrev}
-                    </span>
-                    <span className="text-xs font-bold text-m3-on-surface truncate">
-                      {hw.subjectName}
-                    </span>
-                  </div>
-
-                  {/* Due Date */}
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
-                      <Clock className="w-3.5 h-3.5" />
-                      {t('deadlineIn', { date: formatCzechDate(hw.deadline, 'full') })}
-                    </span>
-                  </div>
-                </div>
-
-                <p
-                  className={`text-sm text-m3-on-surface mt-2 font-medium leading-relaxed ${
-                    hw.done ? 'line-through text-m3-on-surface-variant' : ''
-                  }`}
+          weeks.map((week) => (
+            <section key={week.start || 'undated'} className="flex flex-col gap-1.5">
+              {week.start && (
+                <h3 className="px-1 text-xs sm:text-sm font-bold font-display text-m3-on-surface-variant">
+                  {formatCzechDate(week.start, 'short')} – {formatCzechDate(week.end, 'short')}
+                </h3>
+              )}
+              {week.records.map((hw, index) => (
+                <div
+                  key={hw.id}
+                  className={`p-4 sm:p-5 ${groupRadius(index, week.records.length)} transition-all flex items-start gap-4 shadow-xs bg-m3-surface-container hover:bg-m3-surface-container-high`}
                 >
-                  {hw.content}
-                </p>
+                  {/* Checkbox button */}
+                  {hw.closed ? (
+                    <CheckCircle2 aria-hidden="true" className="mt-1 w-6 h-6 shrink-0 text-emerald-500 fill-emerald-500/20" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => toggleHomeworkDone(hw.id)}
+                      aria-pressed={hw.done}
+                      className="mt-1 text-m3-primary hover:text-emerald-500 transition-colors m3-pressable shrink-0"
+                      title={hw.done ? t('markAsUndone') : t('markAsDone')}
+                    >
+                      {hw.done ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500 fill-emerald-500/20" />
+                      ) : (
+                        <Circle className="w-6 h-6 text-m3-outline hover:text-m3-primary" />
+                      )}
+                    </button>
+                  )}
 
-                {hw.attachments && hw.attachments.length > 0 ? (
-                  <div className="mt-3 flex flex-col gap-2 max-w-sm">
-                    {hw.attachments.map((att) => (
-                      <AttachmentRow key={att.id} id={att.id} name={att.name} />
-                    ))}
-                  </div>
-                ) : (
-                  hw.attachmentName && (
-                    <div className="mt-3 p-2.5 rounded-m3-lg bg-m3-surface-container-high flex items-center gap-2 max-w-sm text-xs font-bold text-m3-primary truncate">
-                      <FileText className="w-4 h-4 shrink-0" />
-                      <span className="truncate">{hw.attachmentName}</span>
+                  {/* Homework Body */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-m3-primary-container text-m3-on-primary-container font-display">
+                          {hw.subjectAbbrev}
+                        </span>
+                        <span className="text-xs font-bold text-m3-on-surface truncate">
+                          {hw.subjectName}
+                        </span>
+                      </div>
+
+                      {/* Due Date */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {hw.closed && <span className="text-m3-on-surface-variant">{t('homeworkClosed')}</span>}
+                        <span className="flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400">
+                          <Clock className="w-3.5 h-3.5" />
+                          {hw.deadline ? t('deadlineIn', { date: formatCzechDate(hw.deadline, 'full') }) : t('noHomeworkDeadline')}
+                        </span>
+                      </div>
                     </div>
-                  )
-                )}
 
-                {/* Footer Metadata Row */}
-                <div className="flex items-center justify-between text-[11px] text-m3-on-surface-variant mt-3 pt-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    {hw.isCustom && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(hw);
-                        }}
-                        className="px-2 py-0.5 -ml-1 rounded-full bg-m3-primary/10 hover:bg-m3-primary/20 text-m3-primary transition-colors flex items-center gap-1 font-bold text-[11px] m3-pressable shrink-0"
-                        title={t('editHomework')}
-                      >
-                        <Pencil className="w-3 h-3" />
-                        <span>{t('editShort')}</span>
-                      </button>
+                    <p className="text-sm text-m3-on-surface mt-2 font-medium leading-relaxed">
+                      {hw.content}
+                    </p>
+
+                    {hw.attachments && hw.attachments.length > 0 ? (
+                      <div className="mt-3 flex flex-col gap-2 max-w-sm">
+                        {hw.attachments.map((att) => (
+                          <AttachmentRow key={att.id} id={att.id} name={att.name} />
+                        ))}
+                      </div>
+                    ) : (
+                      hw.attachmentName && (
+                        <div className="mt-3 p-2.5 rounded-m3-lg bg-m3-surface-container-high flex items-center gap-2 max-w-sm text-xs font-bold text-m3-primary truncate">
+                          <FileText className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{hw.attachmentName}</span>
+                        </div>
+                      )
                     )}
-                    <span className="truncate">
-                      {hw.isCustom ? t('customHomework') : t('assignedBy', { name: hw.teacherName || t('teacherSingular') })}
-                    </span>
-                  </div>
 
-                  <span className="shrink-0">
-                    {hw.isCustom
-                      ? t('addedOn', { date: formatCzechDate(hw.date, 'full') })
-                      : t('assignedOn', { date: formatCzechDate(hw.date, 'full') })}
-                  </span>
+                    {/* Footer Metadata Row */}
+                    <div className="flex items-center justify-between text-[11px] text-m3-on-surface-variant mt-3 pt-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {hw.isCustom && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(hw);
+                            }}
+                            className="px-2 py-0.5 -ml-1 rounded-full bg-m3-primary/10 hover:bg-m3-primary/20 text-m3-primary transition-colors flex items-center gap-1 font-bold text-[11px] m3-pressable shrink-0"
+                            title={t('editHomework')}
+                          >
+                            <Pencil className="w-3 h-3" />
+                            <span>{t('editShort')}</span>
+                          </button>
+                        )}
+                        <span className="truncate">
+                          {hw.isCustom ? t('customHomework') : t('assignedBy', { name: hw.teacherName || t('teacherSingular') })}
+                        </span>
+                      </div>
+
+                      <span className="shrink-0">
+                        {hw.isCustom
+                          ? t('addedOn', { date: formatCzechDate(hw.date, 'full') })
+                          : t('assignedOn', { date: formatCzechDate(hw.date, 'full') })}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              ))}
+            </section>
           ))
         )}
       </div>

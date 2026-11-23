@@ -11,15 +11,20 @@ const syntheticFile = path.resolve(__dirname, '../../fixtures/bakalari/raw/homew
 const captureFile = process.env.HOMEWORKS_JSON;
 
 function serve(doc: unknown) {
-  vi.stubGlobal('fetch', async () => new Response(JSON.stringify(doc), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  const fetch = vi.fn(async (_url: string) => new Response(JSON.stringify(doc), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  vi.stubGlobal('fetch', fetch);
   rememberDirectorySchools([{ id: 'fixture-school', schoolUrl: 'https://school.example' }]);
   bakalariApi.setTokens({
     accessToken: 'a', refreshToken: 'r', expiresIn: 3600, tokenType: 'Bearer',
     userId: 'U1', schoolUrl: 'https://school.example', obtainedAt: Date.now(),
   });
+  return fetch;
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('homework parsing', () => {
   beforeEach(() => serve(JSON.parse(fs.readFileSync(syntheticFile, 'utf8'))));
@@ -32,6 +37,22 @@ describe('homework parsing', () => {
     });
     expect(second).toMatchObject({ id: 'H2', subjectAbbrev: 'AJ', date: '2026-10-05', deadline: '2026-10-12', done: true });
     expect((await bakalariApi.getHomeworks())[0].id).toBe(first.id);
+  });
+
+  it('requests a wider range and retains old assignments with future deadlines and unchecked closed homework', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-23T12:00:00'));
+    const fetch = serve({ Homeworks: [
+      { ID: 'long-running', DateStart: '2026-09-01T00:00:00+02:00', DateEnd: '2026-11-26T00:00:00+01:00' },
+      { ID: 'closed', DateStart: '2026-09-04T00:00:00+02:00', DateEnd: '2026-09-05T00:00:00+02:00', Closed: true },
+    ] });
+
+    const list = await bakalariApi.getHomeworks();
+    expect(fetch.mock.calls[0][0]).toMatch(/\/api\/3\/homeworks\?from=2025-11-23&to=2027-02-21$/);
+    expect(list).toMatchObject([
+      { id: 'long-running', deadline: '2026-11-26', closed: false, done: false },
+      { id: 'closed', deadline: '2026-09-05', closed: true, done: false },
+    ]);
   });
 });
 

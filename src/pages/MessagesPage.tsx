@@ -12,6 +12,7 @@ import {
   Plus,
   PenSquare,
   AlertCircle,
+  Paperclip,
 } from 'lucide-react';
 import { useDataStore } from '../stores/dataStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -20,7 +21,24 @@ import { KomensMessage } from '../types/bakalari';
 import { formatCzechDate, sortByDateDesc } from '../utils/dateUtils';
 import { groupRadius } from '../utils/groupRadius';
 
-type MessagesTab = 'received' | 'unread' | 'infochannel' | 'sent' | 'drafts';
+const MESSAGE_TABS = ['received', 'unread', 'infochannel', 'sent', 'drafts'] as const;
+type MessagesTab = typeof MESSAGE_TABS[number];
+const LAST_TAB_KEY = 'b_messages_tab';
+const TAB_ALIASES = new Map<string, MessagesTab>([
+  ...MESSAGE_TABS.map((tab) => [tab, tab] as const),
+  ['odeslane', 'sent'], ['infokanal', 'infochannel'], ['new', 'unread'], ['nove', 'unread'],
+]);
+
+function readMessagesTab(initialTab?: MessagesTab): MessagesTab {
+  const params = new URLSearchParams(window.location.hash.split('?')[1]);
+  const requestedTab = TAB_ALIASES.get(params.get('tab') ?? '') ?? initialTab;
+  if (requestedTab) return requestedTab;
+  try {
+    return TAB_ALIASES.get(localStorage.getItem(LAST_TAB_KEY) ?? '') ?? 'received';
+  } catch {
+    return 'received';
+  }
+}
 
 interface MessagesPageProps {
   initialTab?: MessagesTab;
@@ -46,20 +64,33 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
     return () => clearInterval(interval);
   }, [fetchAllData]);
 
-  const [activeTab, setActiveTab] = useState<MessagesTab>(() => {
-    if (initialTab && initialTab !== ('toConfirm' as any)) return initialTab;
-    const hash = window.location.hash;
-    if (hash.includes('tab=sent') || hash.includes('tab=odeslane')) return 'sent';
-    if (hash.includes('tab=infochannel') || hash.includes('tab=infokanal')) return 'infochannel';
-    if (hash.includes('tab=unread') || hash.includes('tab=new') || hash.includes('tab=nove')) return 'unread';
-    return 'received';
-  });
+  const [activeTab, setActiveTab] = useState(() => readMessagesTab(initialTab));
 
-  React.useEffect(() => {
-    if (initialTab && initialTab !== ('toConfirm' as any)) {
-      setActiveTab(initialTab);
-    }
+  useEffect(() => {
+    try {
+      localStorage.setItem(LAST_TAB_KEY, activeTab);
+    } catch { /* The current tab still works when browser storage is blocked. */ }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const updateTabFromHash = () => {
+      const route = window.location.hash.split('?')[0];
+      if (/^#\/?(?:messages|infochannel)$/.test(route)) setActiveTab(readMessagesTab(initialTab));
+    };
+    window.addEventListener('hashchange', updateTabFromHash);
+    return () => window.removeEventListener('hashchange', updateTabFromHash);
   }, [initialTab]);
+
+  const selectTab = (tab: MessagesTab) => {
+    const [route, query] = window.location.hash.split('?');
+    if (/^#\/?(?:messages|infochannel)$/.test(route)) {
+      const params = new URLSearchParams(query);
+      params.set('tab', tab);
+      // Keep the tab on this history entry so Back from a message restores it.
+      history.replaceState(history.state, '', `${route}?${params}`);
+    }
+    setActiveTab(tab);
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmFailedId, setConfirmFailedId] = useState<string | null>(null);
@@ -121,7 +152,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
       {/* Tabs: Received, To Confirm, Nové (Unread), Infokanál, Sent, Drafts */}
       <div className="flex items-center p-1.5 rounded-full bg-m3-surface-container gap-1 self-start max-w-full overflow-x-auto no-scrollbar">
         <button
-          onClick={() => setActiveTab('received')}
+          onClick={() => selectTab('received')}
+          aria-pressed={activeTab === 'received'}
           className={`px-4 py-2 rounded-full text-xs font-bold font-display transition-all m3-pressable shrink-0 ${
             activeTab === 'received'
               ? 'bg-m3-primary text-m3-on-primary shadow-xs'
@@ -132,7 +164,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab('unread')}
+          onClick={() => selectTab('unread')}
+          aria-pressed={activeTab === 'unread'}
           className={`px-4 py-2 rounded-full text-xs font-bold font-display transition-all m3-pressable shrink-0 flex items-center gap-1.5 ${
             activeTab === 'unread'
               ? 'bg-m3-primary text-m3-on-primary shadow-xs'
@@ -150,7 +183,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab('infochannel')}
+          onClick={() => selectTab('infochannel')}
+          aria-pressed={activeTab === 'infochannel'}
           className={`px-4 py-2 rounded-full text-xs font-bold font-display transition-all m3-pressable shrink-0 flex items-center gap-1.5 ${
             activeTab === 'infochannel'
               ? 'bg-m3-primary text-m3-on-primary shadow-xs'
@@ -168,7 +202,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab('sent')}
+          onClick={() => selectTab('sent')}
+          aria-pressed={activeTab === 'sent'}
           className={`px-4 py-2 rounded-full text-xs font-bold font-display transition-all m3-pressable shrink-0 ${
             activeTab === 'sent'
               ? 'bg-m3-primary text-m3-on-primary shadow-xs'
@@ -179,7 +214,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
         </button>
 
         <button
-          onClick={() => setActiveTab('drafts')}
+          onClick={() => selectTab('drafts')}
+          aria-pressed={activeTab === 'drafts'}
           className={`px-4 py-2 rounded-full text-xs font-bold font-display transition-all m3-pressable shrink-0 ${
             activeTab === 'drafts'
               ? 'bg-m3-primary text-m3-on-primary shadow-xs'
@@ -260,6 +296,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
           )
         ) : (
           filteredMessages.map((msg, msgIndex) => {
+            const attachmentCount = msg.attachments?.length ?? 0;
             const isSent = msg.type === 'sent';
             const isDraft = msg.type === 'draft';
             const isUnconfirmedIncoming = !isSent && !isDraft && msg.requireConfirmation && !msg.confirmed;
@@ -401,8 +438,18 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
                 )}
 
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold font-display text-m3-on-surface line-clamp-1">
-                    {msg.title}
+                  <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold font-display text-m3-on-surface">
+                    <span className="min-w-0 truncate">{msg.title}</span>
+                    {attachmentCount > 0 && (
+                      <span
+                        role="img"
+                        aria-label={t('attachmentsWithCount', { count: attachmentCount })}
+                        className="inline-flex shrink-0 items-center gap-1 text-xs text-m3-primary"
+                      >
+                        {attachmentCount}
+                        <Paperclip aria-hidden="true" className="size-3.5" />
+                      </span>
+                    )}
                   </h3>
                   <p className="text-xs text-m3-on-surface-variant line-clamp-2 mt-0.5 leading-relaxed">
                     {msg.text}

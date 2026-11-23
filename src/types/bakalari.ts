@@ -186,6 +186,13 @@ export interface TestMark {
   createdAt: number;
 }
 
+export interface BakalariAttachment {
+  id: string;
+  name: string;
+  size?: number;
+  mimeType?: string;
+}
+
 export interface Homework {
   id: string;
   subjectId: string;
@@ -196,8 +203,9 @@ export interface Homework {
   date: string; // assigned date
   deadline: string; // due date
   done: boolean;
+  closed?: boolean;
   attachmentName?: string;
-  attachments?: { id: string; name: string; size?: number }[];
+  attachments?: BakalariAttachment[];
   isCustom?: boolean;
 }
 
@@ -238,11 +246,7 @@ export interface KomensMessage {
     confirmed?: boolean;
     confirmedDate?: string;
   }[];
-  attachments?: {
-    id: string;
-    name: string;
-    size?: number;
-  }[];
+  attachments?: BakalariAttachment[];
 }
 
 export interface SchoolEvent {

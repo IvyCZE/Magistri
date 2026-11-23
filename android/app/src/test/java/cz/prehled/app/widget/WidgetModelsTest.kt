@@ -193,8 +193,12 @@ class WidgetModelsTest {
         val m = HomeworkModel.build(input(snapshot, "2026-10-06T12:00:00"))
         assertEquals(1, m.total)
         assertTrue(m.rows[0].deadlineText.startsWith("do "))
+        val dueToday = HomeworkModel.build(input(snapshot, "2026-10-09T12:00:00"))
+        assertEquals("do dnes", dueToday.rows.single().deadlineText)
         val overdue = HomeworkModel.build(input(snapshot, "2026-11-30T12:00:00"))
-        assertTrue(overdue.rows[0].overdue)
+        assertTrue(overdue.rows.isEmpty())
+        val closed = snapshot.copy(homework = snapshot.homework.map { it.copy(closed = true) })
+        assertTrue(HomeworkModel.build(input(closed, "2026-10-06T12:00:00")).rows.isEmpty())
     }
 
     @Test

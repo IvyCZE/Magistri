@@ -48,6 +48,7 @@ object HomeworkParser {
                 date = h.str("DateStart").dateOnly(),
                 deadline = h.str("DateEnd").dateOnly(),
                 done = h.truthy("Done") || h.truthy("Finished"),
+                closed = h.optBoolean("Closed"),
             )
         }
 }

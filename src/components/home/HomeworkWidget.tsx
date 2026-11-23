@@ -3,17 +3,20 @@ import { ChevronRight, CheckCircle2, Circle, Clock, FileText, Plus, CheckSquare 
 import { useDataStore } from '../../stores/dataStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { formatCzechDate } from '../../utils/dateUtils';
+import { homeworkStatus } from '../../domain/homework';
+import { toIsoDate } from '../../domain/time';
 
 export const HomeworkWidget: React.FC = () => {
   const { homeworks, toggleHomeworkDone } = useDataStore();
   const { setActiveScreen, t, language } = useSettingsStore();
+  const today = toIsoDate(new Date());
 
   // Sort active homeworks by deadline ascending (shortest time left / nearest due date first)
   const activeHomeworks = React.useMemo(() => {
     return [...homeworks]
-      .filter((h) => !h.done)
-      .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''));
-  }, [homeworks]);
+      .filter((h) => homeworkStatus(h, today) === 'active')
+      .sort((a, b) => Number(!a.deadline) - Number(!b.deadline) || (a.deadline || '').localeCompare(b.deadline || ''));
+  }, [homeworks, today]);
 
   const displayHomeworks = activeHomeworks.slice(0, 2);
   const remainingCount = activeHomeworks.length - 2;
@@ -83,7 +86,7 @@ export const HomeworkWidget: React.FC = () => {
                     </span>
                     <div className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
                       <Clock className="w-3 h-3" />
-                      <span>{formatCzechDate(hw.deadline, 'short', language)}</span>
+                      <span>{hw.deadline ? formatCzechDate(hw.deadline, 'short', language) : t('noHomeworkDeadline')}</span>
                     </div>
                   </div>
 

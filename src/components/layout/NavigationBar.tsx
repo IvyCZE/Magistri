@@ -59,7 +59,7 @@ export const NavigationBar: React.FC = () => {
     return (
       <nav
         aria-label="Navigace"
-        className="rail-right fixed top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-1.5 py-3 px-1.5 sm:px-2 rounded-full bg-m3-surface-container/95 dark:bg-m3-surface-container/90 backdrop-blur-xl shadow-2xl transition-all duration-300 max-h-[88vh] overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-right-4 duration-200"
+        className="rail-right navigation-surface navigation-surface-floating fixed top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-1.5 py-3 px-1.5 sm:px-2 rounded-full backdrop-blur-xl shadow-2xl transition-all duration-300 max-h-[88vh] overflow-y-auto no-scrollbar animate-in fade-in slide-in-from-right-4 duration-200"
       >
         {visibleNavItems.map((item) => {
           const Icon = item.icon;
@@ -72,7 +72,7 @@ export const NavigationBar: React.FC = () => {
               title={item.label}
               className={`relative flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-full transition-all m3-pressable group w-14 sm:w-16 ${
                 isActive
-                  ? 'text-m3-on-primary-container font-extrabold'
+                  ? 'text-m3-on-surface font-extrabold'
                   : 'text-m3-on-surface-variant hover:text-m3-on-surface'
               }`}
             >
@@ -116,7 +116,7 @@ export const NavigationBar: React.FC = () => {
     return (
       <nav
         aria-label="Navigace"
-        className="dock-bottom fixed z-30 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] sm:w-auto max-w-xl mx-auto px-3 sm:px-4 py-2 rounded-full bg-m3-surface-container/95 dark:bg-m3-surface-container/90 backdrop-blur-xl shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="dock-bottom navigation-surface navigation-surface-floating fixed z-30 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] sm:w-auto max-w-xl mx-auto px-3 sm:px-4 py-2 rounded-full backdrop-blur-xl shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-200"
       >
         <div className="flex items-center justify-between sm:justify-center gap-1 sm:gap-2.5 w-full">
           {visibleNavItems.map((item) => {
@@ -130,7 +130,7 @@ export const NavigationBar: React.FC = () => {
                 title={item.label}
                 className={`relative flex flex-col items-center justify-center py-1 px-1.5 sm:px-3 rounded-full transition-all m3-pressable flex-1 sm:flex-initial min-w-0 sm:min-w-[64px] group ${
                   isActive
-                    ? 'text-m3-on-primary-container font-extrabold'
+                    ? 'text-m3-on-surface font-extrabold'
                     : 'text-m3-on-surface-variant hover:text-m3-on-surface'
                 }`}
               >
@@ -174,7 +174,7 @@ export const NavigationBar: React.FC = () => {
   return (
     <nav
       aria-label="Navigace"
-      className="fixed bottom-0 left-0 right-0 z-30 bg-m3-surface-container/95 backdrop-blur-xl px-1 sm:px-2 py-1.5 safe-bottom safe-x shadow-lg w-full max-w-full overflow-hidden transition-all duration-300"
+      className="navigation-surface fixed bottom-0 left-0 right-0 z-30 backdrop-blur-xl px-1 sm:px-2 py-1.5 safe-bottom safe-x shadow-lg w-full max-w-full overflow-hidden transition-all duration-300"
     >
       <div className="flex items-center justify-between w-full max-w-md mx-auto">
         {visibleNavItems.map((item) => {
@@ -187,7 +187,7 @@ export const NavigationBar: React.FC = () => {
               onClick={() => setActiveScreen(item.id)}
               className={`relative flex flex-col items-center justify-center py-1 px-1 rounded-full transition-all m3-pressable flex-1 min-w-0 max-w-full ${
                 isActive
-                  ? 'text-m3-on-primary-container font-extrabold'
+                  ? 'text-m3-on-surface font-extrabold'
                   : 'text-m3-on-surface-variant hover:text-m3-on-surface'
               }`}
             >

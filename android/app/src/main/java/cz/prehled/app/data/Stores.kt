@@ -48,7 +48,13 @@ class FileSnapshotStore(private val file: File) : SnapshotStore {
     }
 }
 
-enum class SeenCategory(val key: String) { MARKS("marks"), MESSAGES("messages"), HOMEWORK("homework"), TIMETABLE("timetable") }
+enum class SeenCategory(val key: String) {
+    MARKS("marks"),
+    MESSAGES("messages"),
+    // Seed the wider homework list once when upgrading from the default window.
+    HOMEWORK("homeworkRange"),
+    TIMETABLE("timetable"),
+}
 
 /**
  * Remembers which items the user has already been told about. The first sync

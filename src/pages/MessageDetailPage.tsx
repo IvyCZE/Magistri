@@ -15,7 +15,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useAuthStore } from '../stores/authStore';
 import { formatCzechDate } from '../utils/dateUtils';
 import { MaterialWavyDivider } from '../components/common/MaterialWavyDivider';
-import { AttachmentRow } from '../components/common/AttachmentRow';
+import { MessageAttachments } from '../components/common/MessageAttachments';
 import { sanitizeMessageHtml } from '../utils/textUtils';
 
 export const MessageDetailPage: React.FC = () => {
@@ -576,30 +576,16 @@ export const MessageDetailPage: React.FC = () => {
         </div>
 
         {/* Message Body Content */}
-        {message.html ? (
-          <div
-            className="p-5 sm:p-6 rounded-m3-2xl bg-m3-surface-container-low text-sm sm:text-base text-m3-on-surface leading-relaxed font-sans select-text komens-message-content"
-            dangerouslySetInnerHTML={{ __html: safeHtml }}
-          />
-        ) : (
-          <div className="p-5 sm:p-6 rounded-m3-2xl bg-m3-surface-container-low text-sm sm:text-base text-m3-on-surface leading-relaxed whitespace-pre-wrap font-sans select-text">
-            {message.text}
-          </div>
-        )}
-
-        {/* Attachments Section if present */}
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="flex flex-col gap-2 pt-2">
-            <span className="text-xs font-extrabold text-m3-on-surface-variant uppercase tracking-wider font-display">
-              {t('attachmentsWithCount', { count: message.attachments.length })}
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {message.attachments.map((att) => (
-                <AttachmentRow key={att.id} id={att.id} name={att.name} />
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="flex min-w-0 flex-col gap-4 p-5 sm:p-6 rounded-m3-2xl bg-m3-surface-container-low text-sm sm:text-base text-m3-on-surface leading-relaxed font-sans select-text">
+          {message.attachments && message.attachments.length > 0 && (
+            <MessageAttachments key={message.id} attachments={message.attachments} />
+          )}
+          {message.html ? (
+            <div className="komens-message-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+          ) : (
+            <div className="whitespace-pre-wrap">{message.text}</div>
+          )}
+        </div>
 
         </div>
       </div>

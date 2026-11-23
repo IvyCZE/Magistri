@@ -5,6 +5,13 @@ under the Entries heading with a date and short title.
 
 ## Entries
 
+### [2026-11-23] Prepared Magistři v1.7.0
+
+- The web and Android clients request a wider homework date range. The homework page groups active, overdue, and closed tasks by week. Badges and widgets count active tasks, and Android initializes the expanded notification history silently.
+- Komens displays attachment counts on the message list and places downloads at the top of each message. Image previews use a centered Material morphing loader and only display supported raster images. The message list remembers its selected tab.
+- Active navigation labels stay readable with wallpaper-derived colors in the bar, dock, and rail.
+- The build, public-file scan, license and palette checks, npm audit, 205 web and proxy tests, and 129 Android unit tests passed. One optional capture test was skipped. Chromium verified homework tabs and grouping, message tab restoration, downloads, preview alignment and dismissal, and contrast with a simulated wallpaper palette.
+
 ### [2026-11-23] Added the README screenshot gallery
 
 - Updated the opening description and added six cropped demo screenshots above the features and architecture section. The gallery uses two centered rows of three. The PNGs exclude the device notification bars and embedded metadata.

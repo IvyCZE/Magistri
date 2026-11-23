@@ -4,6 +4,7 @@ import {
   SubjectMarks,
   TimetableData,
   Homework,
+  BakalariAttachment,
   KomensMessage,
   SchoolEvent,
   AbsenceSummary,
@@ -19,6 +20,7 @@ import {
   LessonChange,
 } from '../types/bakalari';
 import { isMessageUnread } from '../domain/messageState';
+import { shiftIsoDate, toIsoDate } from '../domain/time';
 import {
   buildAbsenceRecords,
   checkedDayHours,
@@ -72,8 +74,8 @@ export function normalizeSchoolUrl(url: string): string {
   return cleaned;
 }
 
-/** Homework attachments arrive as `Attachments: [{ Id, Name, Size }]`; entries without an id cannot be downloaded. */
-export function parseAttachments(raw: unknown): { id: string; name: string; size?: number }[] {
+/** Komens and homework use the same attachment shape and download endpoint. */
+export function parseAttachments(raw: unknown): BakalariAttachment[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((a: any) => a && (typeof a.Id === 'string' || typeof a.Id === 'number') && String(a.Id) !== '')
@@ -81,6 +83,7 @@ export function parseAttachments(raw: unknown): { id: string; name: string; size
       id: String(a.Id),
       name: a.Name || a.FileName || 'Příloha',
       size: typeof a.Size === 'number' ? a.Size : undefined,
+      ...(typeof a.Type === 'string' && a.Type ? { mimeType: a.Type } : {}),
     }));
 }
 
@@ -1120,7 +1123,7 @@ class BakalariApiClient {
     }
   }
 
-  /** Web fallback for downloading an attachment; the native app uses the PrehledNative plugin instead. */
+  /** Fetches bytes for an image preview or a browser download. Android saves files through PrehledNative. */
   public async downloadAttachmentBlob(id: string): Promise<Blob> {
     if (this.isMockMode) {
       return new Blob(['Demo attachment'], { type: 'text/plain' });
@@ -1134,8 +1137,10 @@ class BakalariApiClient {
   public async getHomeworks(): Promise<Homework[]> {
     if (this.isMockMode) return MOCK_HOMEWORKS;
     try {
-      const data: any = await this.request('/api/3/homeworks');
-      if (!data || !data.Homeworks || !Array.isArray(data.Homeworks)) return [];
+      const today = toIsoDate(new Date());
+      const range = new URLSearchParams({ from: shiftIsoDate(today, -365), to: shiftIsoDate(today, 90) });
+      const data: any = await this.request(`/api/3/homeworks?${range}`);
+      if (!Array.isArray(data?.Homeworks)) throw new Error('Invalid homework response from Bakaláři API');
 
       return data.Homeworks.map((h: any) => {
         const attachments = parseAttachments(h.Attachments);
@@ -1149,6 +1154,7 @@ class BakalariApiClient {
           date: h.DateStart ? h.DateStart.split('T')[0] : '',
           deadline: h.DateEnd ? h.DateEnd.split('T')[0] : '',
           done: Boolean(h.Done || h.Finished),
+          closed: h.Closed === true,
           attachments,
           attachmentName: attachments[0]?.name ?? h.AttachmentName,
         };
@@ -1413,6 +1419,7 @@ class BakalariApiClient {
           requireConfirmation,
           confirmed,
           confirmedDate: m.ConfirmedDate || m.ConfirmationDate || m.ConfirmDate || undefined,
+          attachments: parseAttachments(m.Attachments),
         });
       });
 
@@ -1467,11 +1474,7 @@ class BakalariApiClient {
           requireConfirmation,
           confirmed,
           confirmedDate: m.ConfirmedDate || m.ConfirmedTime || m.ConfirmationDate || m.ConfirmDate || undefined,
-          attachments: (m.Attachments || []).map((a: any) => ({
-            id: a.Id || Math.random().toString(),
-            name: a.Name || a.FileName || 'Příloha',
-            size: a.Size,
-          })),
+          attachments: parseAttachments(m.Attachments),
         });
       });
 
@@ -1662,11 +1665,11 @@ class BakalariApiClient {
           confirmed,
           confirmedDate,
           recipients,
-          attachments: (msgSource.Attachments || m.Attachments || []).map((a: any) => ({
-            id: a.Id || Math.random().toString(),
-            name: a.Name || a.FileName || 'Příloha',
-            size: a.Size,
-          })),
+          attachments: parseAttachments(
+            Array.isArray(msgSource.Attachments) && msgSource.Attachments.length > 0
+              ? msgSource.Attachments
+              : m.Attachments,
+          ),
         });
       });
 
