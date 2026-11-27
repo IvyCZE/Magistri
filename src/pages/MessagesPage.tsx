@@ -18,7 +18,7 @@ import { useDataStore } from '../stores/dataStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useKeyboardOpen } from '../native/keyboard';
 import { KomensMessage } from '../types/bakalari';
-import { formatCzechDate, sortByDateDesc } from '../utils/dateUtils';
+import { formatMessageDate, sortByDateDesc } from '../utils/dateUtils';
 import { groupRadius } from '../utils/groupRadius';
 
 const MESSAGE_TABS = ['received', 'unread', 'infochannel', 'sent', 'drafts'] as const;
@@ -395,7 +395,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
                       if (isFullyConfirmed) {
                         return (
                           <span
-                            title={msg.confirmedDate ? `${t('confirmed')} ${formatCzechDate(msg.confirmedDate, 'withTime')}` : t('readConfirmed')}
+                            title={msg.confirmedDate ? `${t('confirmed')} ${formatMessageDate(msg.confirmedDate, 'withTime')}` : t('readConfirmed')}
                             className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-display"
                           >
                             <CheckCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -425,7 +425,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialTab }) => {
                       );
                     })()}
                     <span className="text-[11px] text-m3-on-surface-variant font-medium">
-                      {formatCzechDate(msg.date, 'short')}
+                      {formatMessageDate(msg.date, 'short')}
                     </span>
                   </div>
                 </div>

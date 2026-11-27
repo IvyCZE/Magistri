@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   Calendar,
-  Clock,
   MapPin,
   User,
   CalendarDays,
@@ -10,7 +8,7 @@ import {
 import { useDataStore } from '../stores/dataStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { formatEventDate, formatEventTime } from '../domain/eventTime';
-import { getEventDurationDays, formatEventDuration, isEventOngoing } from '../utils/eventUtils';
+import { isEventOngoing } from '../utils/eventUtils';
 import { groupRadius } from '../utils/groupRadius';
 
 type EventsTab = 'upcoming' | 'past';
@@ -90,8 +88,6 @@ export const EventsPage: React.FC = () => {
           </div>
         ) : (
           displayEvents.map((ev, evIndex) => {
-            const isMultiDay = Boolean(ev.endDate && ev.endDate !== ev.date);
-            const durationDays = isMultiDay ? getEventDurationDays(ev.date, ev.endDate) : 1;
             const ongoing = !ev.isPast && isEventOngoing(ev);
 
             return (
@@ -105,14 +101,8 @@ export const EventsPage: React.FC = () => {
                     <span className="font-display font-extrabold">
                       {formatEventDate(ev.date, ev.endDate, lang) || ev.date}
                     </span>
-                    {isMultiDay && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-display bg-m3-primary/10 text-m3-primary">
-                        {formatEventDuration(durationDays)}
-                      </span>
-                    )}
                     {ongoing && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-display bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-display bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                         {t('ongoing')}
                       </span>
                     )}

@@ -39,7 +39,7 @@ it('keeps downloadable attachments in received, noticeboard and sent messages', 
   });
   vi.stubGlobal('fetch', async (input: string) => {
     const type = input.split('/').at(-1) as keyof typeof files;
-    return Response.json(type in files ? { Messages: [{ Id: type, Attachments: [files[type], { Name: 'missing-id' }] }] } : {});
+    return Response.json(type in files ? { Messages: [{ Id: type, Text: '<p style="color: teal">Text</p><img src="#">', Attachments: [files[type], { Name: 'missing-id' }] }] } : {});
   });
 
   const messages = await bakalariApi.getMessages();
@@ -47,4 +47,24 @@ it('keeps downloadable attachments in received, noticeboard and sent messages', 
   expect(firstAttachment('received')).toEqual([{ id: 'P1', name: 'obrazek.png', mimeType: 'image/png' }]);
   expect(firstAttachment('noticeboard')).toEqual([{ id: 'P2', name: 'oznameni.pdf', mimeType: 'application/pdf' }]);
   expect(firstAttachment('sent')).toEqual([{ id: 'P3', name: 'informace.docx' }]);
+  for (const message of messages) {
+    expect(message.needsBodyDetail).toBe(true);
+    expect(message.html).toBe('<p style="color: teal;">Text</p>');
+  }
+});
+
+it('loads and sanitizes the received detail by encoded message ID', async () => {
+  rememberDirectorySchools([{ id: 'test-school', schoolUrl: 'https://school.example' }]);
+  bakalariApi.setTokens({
+    accessToken: 'test', refreshToken: 'test', userId: 'test', schoolUrl: 'https://school.example',
+    expiresIn: 3600, obtainedAt: Date.now(), tokenType: 'Bearer',
+  });
+  const fetchDetail = vi.fn(async () => Response.json({
+    Message: { Text: '<span style="color: red; position: fixed">Full detail</span>' },
+  }));
+  vi.stubGlobal('fetch', fetchDetail);
+  await expect(bakalariApi.getKomensMessageBody('received', 'M/1')).resolves.toEqual({
+    text: 'Full detail', html: '<span style="color: red;">Full detail</span>', needsBodyDetail: false,
+  });
+  expect(fetchDetail).toHaveBeenCalledWith(expect.stringContaining('/api/3/komens/messages/received/M%2F1'), expect.anything());
 });

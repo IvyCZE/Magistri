@@ -218,10 +218,12 @@ export interface KomensSender {
 export interface KomensMessage {
   id: string;
   serverId?: string;
+  localId?: string;
   type: 'received' | 'sent' | 'noticeboard' | 'draft';
   title: string;
   text: string;
   html?: string;
+  needsBodyDetail?: boolean;
   sender: KomensSender;
   recipientName?: string;
   recipientGroup?: KomensRecipientGroup;
@@ -330,6 +332,8 @@ export interface TeachingTopic {
   id: string;
   date: string;
   hour: string;
+  /** An explicit timetable period. The display hour may be inferred from a list position. */
+  period?: string;
   subjectId: string;
   subjectAbbrev: string;
   subjectName: string;

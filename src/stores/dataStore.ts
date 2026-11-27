@@ -35,7 +35,7 @@ import {
   MOCK_TEACHING_TOPICS,
 } from '../api/mockData';
 import { sortByDateDesc, getAppDate, getRelevantMondayIso, getNextWeekMondayIso } from '../utils/dateUtils';
-import { cleanHtmlToPlainText, hasHtmlMarkup, sanitizeMessageHtml } from '../utils/textUtils';
+import { cleanHtmlToPlainText, hasHtmlMarkup, sanitizeMessageHtml, stripMessageImages } from '../utils/textUtils';
 import { groupConsecutiveEvents } from '../utils/eventUtils';
 import { getHolidayInfo } from '../utils/holidayUtils';
 
@@ -43,6 +43,8 @@ import type { MarkOverride } from '../domain/markSimulation';
 import { mondayOfTimetable, pruneWeeks } from '../domain/timetableCache';
 import { SENT_EXCUSES_KEY } from '../domain/sentExcuses';
 import { homeworkStatus } from '../domain/homework';
+import { normalizeLessonPeriod } from '../domain/lessonTopic';
+import { isLocalSentExcuse, reconcileSentExcuses } from '../domain/komensSentExcuses';
 import { toIsoDate } from '../domain/time';
 
 export interface SimulatedMark {
@@ -584,8 +586,10 @@ export function enrichSubjectsList(
 function reconcileKomensMessages(messages: KomensMessage[]): KomensMessage[] {
   const savedCustom = loadSavedCustomMessages();
   const savedConfirmations = loadSavedConfirmations();
+  const isRealApiMode = !bakalariApi.getIsMockMode();
 
   const reconciledCustom = savedCustom.map((c) => {
+    if (isRealApiMode && isLocalSentExcuse(c)) return c;
     const cleanCTitle = c.title.trim().toLowerCase();
     const serverMatch = messages.find((sm) => {
       if (sm.type !== c.type) return false;
@@ -629,6 +633,7 @@ function reconcileKomensMessages(messages: KomensMessage[]): KomensMessage[] {
   saveCustomMessages(reconciledCustom);
 
   const filteredCustom = reconciledCustom.filter((c) => {
+    if (isRealApiMode && isLocalSentExcuse(c)) return true;
     return !messages.some((m) => {
       if (m.type !== c.type) return false;
       if (m.id === c.id || (c.serverId && m.id === c.serverId)) return true;
@@ -638,8 +643,8 @@ function reconcileKomensMessages(messages: KomensMessage[]): KomensMessage[] {
     });
   });
 
-  const isRealApiMode = !bakalariApi.getIsMockMode();
-  const finalMessages = [...filteredCustom, ...messages].map((m) => {
+  const combined = isRealApiMode ? reconcileSentExcuses(filteredCustom, messages) : [...filteredCustom, ...messages];
+  const finalMessages = combined.map((m) => {
     const cleanTitle = m.title.trim().toLowerCase();
     const titleKey = cleanTitle ? `title_${m.type}_${cleanTitle}` : '';
     const override = savedConfirmations[m.id] || (titleKey ? savedConfirmations[titleKey] : undefined);
@@ -691,54 +696,43 @@ function reconcileKomensMessages(messages: KomensMessage[]): KomensMessage[] {
   return finalMessages;
 }
 
-function extractTopicsFromTimetables(
-  actualTimetable?: TimetableData,
-  permanentTimetable?: TimetableData,
-  currentTopics: TeachingTopic[] = []
-): TeachingTopic[] {
-  const timetableTopics: TeachingTopic[] = [];
-  const allTimetableDaysForTopics = [
-    ...(actualTimetable?.days || []),
-    ...(permanentTimetable?.days || []),
-  ];
-  const hoursMap = new Map<number, string>();
-  (actualTimetable?.hours || permanentTimetable?.hours || []).forEach((h) => {
-    hoursMap.set(h.id, h.caption ? `${h.caption}. hodina` : `${h.id}. hodina`);
+function extractTopicsFromTimetables(...timetables: TimetableData[]): TeachingTopic[] {
+  return timetables.flatMap(({ days, hours }) => {
+    const periods = new Map(hours.map(({ id, caption }) => [id, caption]));
+    return days.flatMap((day) => (day.atoms || []).flatMap((atom) => {
+      const topic = atom.theme?.trim();
+      if (!topic) return [];
+      const period = periods.get(atom.hourId);
+      return [{
+        id: atom.id || `atom-topic-${day.date}-${atom.hourId}`,
+        date: day.date?.split('T')[0] || '',
+        hour: period ? `${period}. hodina` : `${atom.hourId}. hodina`,
+        period,
+        subjectId: atom.subjectId,
+        subjectAbbrev: atom.subjectAbbrev,
+        subjectName: atom.subjectName,
+        topic,
+        teacher: atom.teacherName,
+      }];
+    }));
   });
+}
 
-  allTimetableDaysForTopics.forEach((day) => {
-    (day.atoms || []).forEach((atom) => {
-      if (atom.theme && atom.theme.trim()) {
-        timetableTopics.push({
-          id: atom.id || `atom-topic-${day.date}-${atom.hourId}`,
-          date: day.date ? day.date.split('T')[0] : '',
-          hour: hoursMap.get(atom.hourId) || (atom.hourId ? `${atom.hourId}. hodina` : ''),
-          subjectId: atom.subjectId,
-          subjectAbbrev: atom.subjectAbbrev,
-          subjectName: atom.subjectName,
-          topic: atom.theme.trim(),
-          teacher: atom.teacherName,
-        });
-      }
-    });
-  });
-
-  const mergedTopicsMap = new Map<string, TeachingTopic>();
-  currentTopics.forEach((t) => {
-    const key = `${t.date}-${(t.subjectAbbrev || t.subjectName).toUpperCase()}-${t.topic.toLowerCase()}`;
-    mergedTopicsMap.set(key, t);
-  });
-  timetableTopics.forEach((t) => {
-    const key = `${t.date}-${(t.subjectAbbrev || t.subjectName).toUpperCase()}-${t.topic.toLowerCase()}`;
-    if (!mergedTopicsMap.has(key)) {
-      mergedTopicsMap.set(key, t);
+function mergeTeachingTopics(...sources: TeachingTopic[][]): TeachingTopic[] {
+  const topics = new Map<string, Map<string, TeachingTopic>>();
+  for (const source of sources) {
+    for (const topic of source) {
+      const key = JSON.stringify([topic.date, (topic.subjectAbbrev || topic.subjectName).toUpperCase(), topic.topic.toLowerCase()]);
+      const periods = topics.get(key) ?? new Map<string, TeachingTopic>();
+      const period = normalizeLessonPeriod(topic.period);
+      // Prefer a known period over a duplicate entry with no period.
+      if (!period && periods.size && !periods.has('')) continue;
+      if (period) periods.delete('');
+      periods.set(period, { ...periods.get(period), ...topic });
+      topics.set(key, periods);
     }
-  });
-  return Array.from(mergedTopicsMap.values()).sort((a, b) => {
-    const da = new Date(a.date).getTime() || 0;
-    const db = new Date(b.date).getTime() || 0;
-    return db - da;
-  });
+  }
+  return sortByDateDesc(Array.from(topics.values()).flatMap((periods) => Array.from(periods.values())));
 }
 
 interface DataState {
@@ -905,6 +899,7 @@ if (cachedPermanentTimetable?.days?.length) {
 }
 
 let isFetchInProgress = false;
+let teachingTopicsRequestId = 0;
 let lastFetchStartTime = 0;
 
 export const useDataStore = create<DataState>((set, get) => ({
@@ -928,7 +923,9 @@ export const useDataStore = create<DataState>((set, get) => ({
   homeworks: [...initialCustomHomeworks, ...applyHomeworkDone(isInitialMock ? MOCK_HOMEWORKS : cachedHomeworks)],
   customHomeworks: initialCustomHomeworks,
   testMarks: initialTestMarks,
-  messages: sortByDateDesc([...initialCustomMessages, ...(isInitialMock ? MOCK_MESSAGES : cachedMessages)]),
+  messages: sortByDateDesc(isInitialMock
+    ? [...initialCustomMessages, ...MOCK_MESSAGES]
+    : reconcileSentExcuses(initialCustomMessages, cachedMessages)),
   selectedMessageId: null,
   replyToMessageId: null,
   events: cachedEvents,
@@ -1139,7 +1136,10 @@ export const useDataStore = create<DataState>((set, get) => ({
         hasAnySuccess = true;
         const finalMessages = reconcileKomensMessages(messages);
         set({ messages: sortByDateDesc(finalMessages) });
-        saveCachedData('b_cache_messages', messages);
+        saveCachedData('b_cache_messages', messages.map((message) => {
+          const html = stripMessageImages(message.html);
+          return html === message.html ? message : { ...message, html, needsBodyDetail: true };
+        }));
       } else if (Array.isArray(messages) && messages.length === 0) {
         // Only overwrite with empty array if there is NO server outage
         if (!bakalariApi.isServerOutage()) {
@@ -1189,7 +1189,7 @@ export const useDataStore = create<DataState>((set, get) => ({
           bakalariApi.getSubjects().catch(() => []),
           bakalariApi.getTeachers().catch(() => []),
           bakalariApi.getKomensReceivers().catch(() => []),
-          bakalariApi.getKomensMessageTypes().catch(() => ({ messageTypes: [], apiStudents: [], apiTeachers: [] })),
+          bakalariApi.getKomensMessageTypes().catch(() => ({ loaded: false, messageTypes: [], apiStudents: [], apiTeachers: [] })),
         ]).then(([subjects, apiTeachers, komensReceivers, komensTypesData]) => {
           const mergedApiTeachers = [...apiTeachers, ...(komensTypesData?.apiTeachers || [])];
           const unifiedTeachers = extractUnifiedTeachers(bakalariApi.getIsMockMode(), {
@@ -1207,12 +1207,9 @@ export const useDataStore = create<DataState>((set, get) => ({
             permanentTimetable: get().permanentTimetable,
             teachers: unifiedTeachers,
           });
-          const studentsList = (komensTypesData?.apiStudents && komensTypesData.apiStudents.length > 0)
-            ? komensTypesData.apiStudents
-            : bakalariApi.getIsMockMode() ? MOCK_STUDENTS : [];
-          const messageTypesList = (komensTypesData?.messageTypes && komensTypesData.messageTypes.length > 0)
-            ? komensTypesData.messageTypes
-            : bakalariApi.getIsMockMode() ? MOCK_MESSAGE_TYPES : [];
+          const studentsList = komensTypesData.loaded ? komensTypesData.apiStudents : get().students;
+          const existingTypes = get().komensMessageTypes;
+          const messageTypesList = !komensTypesData.loaded && existingTypes.length ? existingTypes : komensTypesData.messageTypes;
 
           set({
             teachers: unifiedTeachers,
@@ -1222,9 +1219,11 @@ export const useDataStore = create<DataState>((set, get) => ({
           });
           saveCachedData('b_cache_teachers', unifiedTeachers);
           saveCachedData('b_cache_subjects', enrichedSubjects);
-          saveCachedData('b_cache_students', studentsList);
-          saveCachedData('b_cache_message_types', messageTypesList);
-          localStorage.setItem('b_cache_meta_ts', String(nowMs));
+          if (komensTypesData.loaded) {
+            saveCachedData('b_cache_students', studentsList);
+            saveCachedData('b_cache_message_types', messageTypesList);
+            localStorage.setItem('b_cache_meta_ts', String(nowMs));
+          }
         }).catch((e) => {
           console.warn('Failed to fetch metadata:', e);
         })
@@ -1244,9 +1243,8 @@ export const useDataStore = create<DataState>((set, get) => ({
         pMeta,
       ]);
 
-      const finalTopics = extractTopicsFromTimetables(
-        get().actualTimetable,
-        get().permanentTimetable,
+      const finalTopics = mergeTeachingTopics(
+        extractTopicsFromTimetables(get().actualTimetable, get().permanentTimetable),
         get().teachingTopics
       );
 
@@ -1383,70 +1381,24 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   fetchTeachingTopics: async (force = false) => {
-    if (!force && get().teachingTopics.length > 0 && !get().isTeachingLoading) {
-      return;
-    }
+    if (get().isTeachingLoading || (!force && get().teachingTopics.length > 0)) return;
+    const requestId = ++teachingTopicsRequestId;
     set({ isTeachingLoading: true });
     try {
-      const subjects = get().subjectsList;
-      const apiTopics = await bakalariApi.getTeachingTopics(subjects);
-
-      const timetableTopics: TeachingTopic[] = [];
-      const allDays = [
-        ...(get().actualTimetable?.days || []),
-        ...(get().permanentTimetable?.days || []),
-        ...(get().timetable?.days || []),
-      ];
-      const hourCaptions = new Map<number, string>();
-      (get().actualTimetable?.hours || get().timetable?.hours || []).forEach((h) => {
-        hourCaptions.set(h.id, h.caption ? `${h.caption}. hodina` : `${h.id}. hodina`);
-      });
-
-      allDays.forEach((day) => {
-        (day.atoms || []).forEach((atom) => {
-          if (atom.theme && atom.theme.trim()) {
-            timetableTopics.push({
-              id: atom.id || `tt-${day.date}-${atom.hourId}`,
-              date: day.date ? day.date.split('T')[0] : '',
-              hour: hourCaptions.get(atom.hourId) || (atom.hourId ? `${atom.hourId}. hodina` : ''),
-              subjectId: atom.subjectId,
-              subjectAbbrev: atom.subjectAbbrev,
-              subjectName: atom.subjectName,
-              topic: atom.theme.trim(),
-              teacher: atom.teacherName,
-            });
-          }
-        });
-      });
-
-      const mergedMap = new Map<string, TeachingTopic>();
-      timetableTopics.forEach((t) => {
-        const key = `${t.date}-${(t.subjectAbbrev || t.subjectName).toUpperCase()}-${t.topic.toLowerCase()}`;
-        mergedMap.set(key, t);
-      });
-      apiTopics.forEach((t) => {
-        const key = `${t.date}-${(t.subjectAbbrev || t.subjectName).toUpperCase()}-${t.topic.toLowerCase()}`;
-        mergedMap.set(key, {
-          ...(mergedMap.get(key) || {}),
-          ...t,
-        });
-      });
-
-      let finalTopics = Array.from(mergedMap.values());
-      if (finalTopics.length === 0 && bakalariApi.getIsMockMode()) {
-        finalTopics = MOCK_TEACHING_TOPICS;
-      }
-
-      finalTopics.sort((a, b) => {
-        const da = new Date(a.date).getTime() || 0;
-        const db = new Date(b.date).getTime() || 0;
-        return db - da;
-      });
-
-      set({ teachingTopics: finalTopics, isTeachingLoading: false });
+      const apiTopics = await bakalariApi.getTeachingTopics(get().subjectsList);
+      if (requestId !== teachingTopicsRequestId) return;
+      const { actualTimetable, permanentTimetable, timetable, teachingTopics } = get();
+      const finalTopics = mergeTeachingTopics(
+        extractTopicsFromTimetables(actualTimetable, permanentTimetable, timetable),
+        teachingTopics,
+        apiTopics,
+      );
+      set({ teachingTopics: finalTopics });
+      saveCachedData('b_cache_teaching_topics', finalTopics);
     } catch (e) {
       console.error('Failed to fetch teaching topics:', e);
-      set({ isTeachingLoading: false });
+    } finally {
+      if (requestId === teachingTopicsRequestId) set({ isTeachingLoading: false });
     }
   },
 
@@ -1806,7 +1758,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       recipientGroup: msg.recipientGroup,
       recipientType: msg.recipientTypeCode,
       recipientIds: msg.recipientIds || (msg.recipientId ? [msg.recipientId] : []),
-      category: msg.category || 'message',
+      category: msg.messageType === 'OMLUVENKA' ? 'absence' : (msg.category || 'message'),
       requireConfirmation: Boolean(msg.requireConfirmation),
       confirmed: false,
       isAllDay: msg.isAllDay,
@@ -2028,6 +1980,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   clearCache: () => {
+    teachingTopicsRequestId++;
     const keysToRemove = [
       'b_cache_timetable_actual',
       'b_cache_timetable_perm',
@@ -2078,6 +2031,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       students: [],
       komensMessageTypes: [],
       teachingTopics: [],
+      isTeachingLoading: false,
       simulations: {},
       markOverrides: {},
       lastSendError: null,

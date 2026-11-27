@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { rasterImageMime } from '../domain/rasterImage';
 
 /**
  * Utility functions for HTML text sanitization, entity decoding,
@@ -41,7 +42,7 @@ export function decodeHtmlEntities(str: string): string {
  */
 export function hasHtmlMarkup(str: string): boolean {
   if (!str || typeof str !== 'string') return false;
-  return /<\s*(?:p|div|br|span|b|strong|i|em|u|s|a|ul|ol|li|table|thead|tbody|tr|th|td|h[1-6]|blockquote|pre|code)\b[^>]*>/i.test(str);
+  return /<\s*(?:p|div|br|span|b|strong|i|em|u|s|a|img|font|ul|ol|li|table|thead|tbody|tr|th|td|h[1-6]|blockquote|pre|code)\b[^>]*>/i.test(str);
 }
 
 /**
@@ -88,20 +89,60 @@ export function cleanHtmlToPlainText(raw: string): string {
   return text.trim();
 }
 
-/** Only message formatting and safe links survive; active content and tracking images do not. */
-export function sanitizeMessageHtml(raw: string): string {
-  if (!raw || typeof raw !== 'string' || !DOMPurify.isSupported) return '';
+function verifiedInlineImage(source: string): string | undefined {
+  const prefix = /^data:(image\/(?:avif|png|jpeg|gif|webp));base64,/i.exec(source);
+  if (!prefix) return undefined;
+
+  const mime = prefix[1].toLowerCase();
+  const encoded = source.slice(prefix[0].length).replace(/[\t\n\f\r ]/g, '');
+  if (!/^[a-z0-9+/]+={0,2}$/i.test(encoded) || encoded.length % 4 === 1) return undefined;
+  if (encoded.endsWith('=') && encoded.length % 4 !== 0) return undefined;
+
+  try {
+    // The decoder only needs the header to compare the advertised MIME to the bytes.
+    const header = Uint8Array.from(atob(encoded.slice(0, 88)), char => char.charCodeAt(0));
+    return rasterImageMime(header) === mime ? `data:${mime};base64,${encoded}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function sanitizeMessageContent(raw: string): { html: string; needsBodyDetail: boolean } {
+  if (!raw || typeof raw !== 'string' || !DOMPurify.isSupported) return { html: '', needsBodyDetail: false };
 
   const fragment = DOMPurify.sanitize(raw, {
     ALLOWED_TAGS: [
       'p', 'div', 'br', 'span', 'b', 'strong', 'i', 'em', 'u', 's', 'del',
       'a', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code', 'hr', 'sup', 'sub',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code', 'hr', 'sup', 'sub', 'img', 'font',
     ],
-    ALLOWED_ATTR: ['href', 'title', 'colspan', 'rowspan', 'scope', 'start', 'reversed'],
+    ALLOWED_ATTR: ['href', 'title', 'colspan', 'rowspan', 'scope', 'start', 'reversed', 'src', 'alt', 'style', 'color'],
     ALLOW_DATA_ATTR: false,
     ALLOW_ARIA_ATTR: false,
     RETURN_DOM_FRAGMENT: true,
+  });
+
+  let needsBodyDetail = false;
+  fragment.querySelectorAll('img').forEach((image) => {
+    const src = image.getAttribute('src')?.trim() ?? '';
+    if (src === '#') needsBodyDetail = true;
+    const verified = verifiedInlineImage(src);
+    if (verified) image.setAttribute('src', verified);
+    else image.remove();
+  });
+  fragment.querySelectorAll('[src]:not(img)').forEach(element => element.removeAttribute('src'));
+
+  const parsedStyle = document.createElement('span').style;
+  fragment.querySelectorAll('[style], [color]').forEach((element) => {
+    parsedStyle.cssText = element.getAttribute('style') || '';
+    if (!parsedStyle.color && element.localName === 'font') parsedStyle.color = element.getAttribute('color') || '';
+    const color = parsedStyle.color;
+    element.removeAttribute('style');
+    element.removeAttribute('color');
+    // Rebuild only the color declaration from a literal CSS color parsed by the browser.
+    if (/^(?:#[0-9a-f]{3,8}|[a-z]+|(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([a-z0-9.+%,/\s-]+\))$/i.test(color)) {
+      element.setAttribute('style', `color: ${color};`);
+    }
   });
   fragment.querySelectorAll('a').forEach((anchor) => {
     const href = anchor.getAttribute('href');
@@ -119,7 +160,30 @@ export function sanitizeMessageHtml(raw: string): string {
   });
   const container = document.createElement('div');
   container.append(fragment);
-  return container.innerHTML.replace(/&nbsp;/gi, ' ').trim();
+  return { html: container.innerHTML.replace(/&nbsp;/gi, ' ').trim(), needsBodyDetail };
+}
+
+/** Preserves message formatting and validated embedded raster images. */
+export function sanitizeMessageHtml(raw: string): string {
+  return sanitizeMessageContent(raw).html;
+}
+
+export function parseKomensMessageBody(raw: string) {
+  const content = hasHtmlMarkup(raw) ? sanitizeMessageContent(raw) : undefined;
+  return {
+    text: cleanHtmlToPlainText(raw),
+    html: content?.html,
+    needsBodyDetail: content?.needsBodyDetail ?? false,
+  };
+}
+
+/** Keep the offline text cache compact. The body can be reloaded for its images. */
+export function stripMessageImages(html: string | undefined): string | undefined {
+  if (!html?.includes('<img')) return html;
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  template.content.querySelectorAll('img').forEach(image => image.remove());
+  return template.innerHTML;
 }
 
 /**

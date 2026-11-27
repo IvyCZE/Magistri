@@ -4,7 +4,7 @@ import { useDataStore } from '../../stores/dataStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { formatCzechDate, formatCzechDateRange } from '../../utils/dateUtils';
 import { formatEventStartTime } from '../../domain/eventTime';
-import { getEventDurationDays, formatEventDuration, isEventOngoing } from '../../utils/eventUtils';
+import { isEventOngoing } from '../../utils/eventUtils';
 
 export const EventsWidget: React.FC = () => {
   const { events } = useDataStore();
@@ -50,7 +50,6 @@ export const EventsWidget: React.FC = () => {
           ) : (
             displayEvents.map((ev) => {
               const isMultiDay = Boolean(ev.endDate && ev.endDate !== ev.date);
-              const durationDays = isMultiDay ? getEventDurationDays(ev.date, ev.endDate) : 1;
               const ongoing = !ev.isPast && isEventOngoing(ev);
 
               return (
@@ -67,11 +66,6 @@ export const EventsWidget: React.FC = () => {
                           : formatCzechDate(ev.date, 'short')}
                         {ev.time ? ` • ${formatEventStartTime(ev.time, ev.date)}` : ''}
                       </span>
-                      {isMultiDay && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold font-display bg-m3-primary/10 text-m3-primary shrink-0">
-                          {formatEventDuration(durationDays)}
-                        </span>
-                      )}
                       {ongoing && (
                         <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold font-display bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0">
                           {t('ongoing')}

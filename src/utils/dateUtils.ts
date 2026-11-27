@@ -114,6 +114,14 @@ export function formatCzechDate(
   return year ? `${day}. ${month}. ${year}` : `${day}. ${month}.`;
 }
 
+export function formatMessageDate(date: string | undefined, format: 'short' | 'withTime'): string {
+  if (date && /[T ]\d{2}:\d{2}.*(?:Z|[+-]\d{2}:?\d{2})$/i.test(date)) {
+    const instant = new Date(date);
+    if (Number.isFinite(instant.getTime())) return formatCzechDate(instant, format);
+  }
+  return formatCzechDate(date, format);
+}
+
 /**
  * Formats a date range cleanly according to language.
  * Czech: "31. 8. – 4. 9." or "15. – 19. 9. 2026"

@@ -60,15 +60,6 @@ export function areDatesAdjacent(endA: string, startB: string): boolean {
 }
 
 /**
- * Calculates number of calendar days a multi-day event spans.
- */
-export function getEventDurationDays(startDateStr: string, endDateStr?: string): number {
-  if (!endDateStr || startDateStr === endDateStr) return 1;
-  const diff = getDayDifference(startDateStr, endDateStr);
-  return diff >= 0 ? diff + 1 : 1;
-}
-
-/**
  * Checks if an event is currently ongoing on the specified date .
  */
 export function isEventOngoing(ev: SchoolEvent, currentDate: Date): boolean {

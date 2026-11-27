@@ -28,14 +28,18 @@ import {
 } from 'lucide-react';
 
 import { useDataStore, isStudentRole } from '../stores/dataStore';
+import { bakalariApi } from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { formatCzechDate } from '../utils/dateUtils';
+import { formatCzechDate, formatMessageDate } from '../utils/dateUtils';
 import { groupRadius } from '../utils/groupRadius';
 import { searchEntry, rankEntries, type SearchEntry } from '../domain/recipientSearch';
+import { isAddressablePerson, resolveReplyRecipient, senderRecipientType } from '../domain/replyRecipient';
+import { selectAbsenceRecipient, type AbsenceRecipient } from '../domain/absenceRecipients';
 import { hourIdOfLesson, parseExcusePrefill } from '../domain/absenceRecords';
 import { lessonOfHourId, rememberSentExcuse } from '../domain/sentExcuses';
 import { MaterialWavyDivider } from '../components/common/MaterialWavyDivider';
+import { MaterialMorphingLoader } from '../components/common/MaterialMorphingLoader';
 
 type MessageCategory = 'message' | 'absence' | 'noticeboard';
 
@@ -144,9 +148,12 @@ export const NewMessagePage: React.FC = () => {
   const queryReplyTo = queryParams?.get('replyTo') || null;
   const queryDraftId = queryParams?.get('draftId') || null;
 
-  const targetReplyId = replyToMessageId || queryReplyTo;
+  const targetReplyId = queryDraftId ? null : queryReplyTo || replyToMessageId;
   const replyOriginal = targetReplyId ? messages.find((m) => m.id === targetReplyId) : null;
   const draftOriginal = queryDraftId ? messages.find((m) => m.id === queryDraftId) : null;
+  const replyRecipient = useMemo(() => replyOriginal
+    ? resolveReplyRecipient(replyOriginal.sender, availableTeachers, availableStudents)
+    : undefined, [replyOriginal, availableTeachers, availableStudents]);
   // Opened from an unexcused absence: the form starts as an absence excuse for that day and lessons.
   const [excusePrefill] = useState(() => parseExcusePrefill(queryParams));
 
@@ -158,8 +165,29 @@ export const NewMessagePage: React.FC = () => {
     }
     return 'message';
   });
-  // UNIFIED SELECTION STATE
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const prefilledIds = useMemo(() => {
+    if (replyRecipient) return [`indiv:${replyRecipient.id}`];
+    const selectByName = (name: string) => {
+      const match = resolveReplyRecipient({ id: '', name }, availableTeachers, availableStudents);
+      return match ? `indiv:${match.id}` : `custom:${name}`;
+    };
+    if (draftOriginal?.recipientIds?.length) {
+      return draftOriginal.recipientIds.map((id) => {
+        if (id.startsWith('custom:')) return selectByName(id.slice('custom:'.length));
+        if (id.includes(':')) return id;
+        const known = availableTeachers.some((t) => t.id === id) || availableStudents.some((s) => s.id === id);
+        return known ? `indiv:${id}` : selectByName(id);
+      });
+    }
+    if (!draftOriginal?.recipientName) return [];
+    return draftOriginal.recipientName.split(',').map(name => name.trim()).filter(Boolean).map(selectByName);
+  }, [replyRecipient, draftOriginal, availableTeachers, availableStudents]);
+  // Let asynchronous recipient data fill the initial selection until the user edits it.
+  const [recipientEdits, setRecipientEdits] = useState<string[] | null>(null);
+  const selectedIds = recipientEdits ?? prefilledIds;
+  const setSelectedIds = (update: React.SetStateAction<string[]>) => {
+    setRecipientEdits(previous => typeof update === 'function' ? update(previous ?? prefilledIds) : update);
+  };
   
   const [requireConfirmation, setRequireConfirmation] = useState(() => {
     if (draftOriginal && draftOriginal.requireConfirmation !== undefined) {
@@ -183,7 +211,7 @@ export const NewMessagePage: React.FC = () => {
   const [text, setText] = useState<string>(() => {
     if (draftOriginal) return draftOriginal.text || '';
     if (replyOriginal) {
-      return `\n\n--- ${t('originalMessageHeader', { name: replyOriginal.sender.name, date: formatCzechDate(replyOriginal.date, 'withTime') })} ---\n${replyOriginal.text}`;
+      return `\n\n--- ${t('originalMessageHeader', { name: replyOriginal.sender.name, date: formatMessageDate(replyOriginal.date, 'withTime') })} ---\n${replyOriginal.text}`;
     }
     return '';
   });
@@ -263,59 +291,30 @@ export const NewMessagePage: React.FC = () => {
     return Boolean(draftOriginal?.emailNotification);
   });
 
-  const omluvenkaType = komensMessageTypes.find((mt) => mt.abbreviation === 'OMLUVENKA');
+  const absenceAccount = JSON.stringify([user?.schoolUrl, user?.id, user?.className]);
+  const [absenceRecipientResult, setAbsenceRecipientResult] = useState<{ account: string; recipients: AbsenceRecipient[] }>();
+  const [absenceRecipientAttempt, setAbsenceRecipientAttempt] = useState(0);
+  const [absenceRecipientId, setAbsenceRecipientId] = useState(() =>
+    draftOriginal?.recipientIds?.[0]?.replace(/^indiv:/, '') || '');
 
-  const omluvenkaAllowedTeachers = React.useMemo(() => {
-    const apiRecipients = (omluvenkaType?.recipientsTypes || []).flatMap((rt) => rt.recipients || []);
-    if (apiRecipients.length > 0) {
-      return apiRecipients.map((r) => {
-        const matched = availableTeachers.find(
-          (t) => t.id === r.code || t.name.toLowerCase() === (r.displayName || r.name).toLowerCase()
-        );
-        return {
-          id: r.code || (matched?.id && !matched.id.startsWith('teacher-') ? matched.id : '') || user?.classTeacherId || '',
-          name: r.displayName || r.name || matched?.name || '',
-          role: matched?.role || 'Třídní učitel',
-          subjectName: matched?.subjectName,
-        };
-      });
-    }
+  useEffect(() => {
+    if (category !== 'absence') return;
+    let active = true;
+    void bakalariApi.getAbsenceExcuseRecipients().then((recipients) => {
+      if (active) setAbsenceRecipientResult({ account: absenceAccount, recipients });
+    }).catch(() => {
+      if (active) setAbsenceRecipientResult({ account: absenceAccount, recipients: [] });
+    });
+    return () => { active = false; };
+  }, [category, absenceAccount, absenceRecipientAttempt]);
 
-    if (user?.classTeacherId || user?.classTeacherName) {
-      return [{
-        id: user.classTeacherId || `teacher-${user.classTeacherName}`,
-        name: user.classTeacherName || 'Třídní učitel',
-        role: 'Třídní učitel',
-      }];
-    }
-
-    if (availableTeachers.length > 0) {
-      return [availableTeachers[0]];
-    }
-
-    return [];
-  }, [omluvenkaType, availableTeachers, user]);
-
-  const defaultAbsenceTeacher = React.useMemo(() => {
-    return omluvenkaAllowedTeachers[0] || null;
-  }, [omluvenkaAllowedTeachers]);
-
-  const selectedAbsenceTeacher = React.useMemo(() => {
-    if (omluvenkaAllowedTeachers.length === 0) return null;
-    const indiv = selectedIds.find((id) => id.startsWith('indiv:'));
-    if (indiv) {
-      const rawId = indiv.replace('indiv:', '');
-      const match = omluvenkaAllowedTeachers.find((t) => t.id === rawId);
-      if (match) return match;
-    }
-    return omluvenkaAllowedTeachers[0];
-  }, [selectedIds, omluvenkaAllowedTeachers]);
-
+  const matchingResult = absenceRecipientResult?.account === absenceAccount ? absenceRecipientResult : undefined;
+  const absenceRecipients = matchingResult?.recipients ?? [];
+  const selectedAbsenceTeacher = selectAbsenceRecipient(absenceRecipients, absenceRecipientId);
   const selectedAbsenceTeacherId = selectedAbsenceTeacher?.id || '';
-
-  const selectedAbsenceTeacherName = selectedAbsenceTeacher
-    ? `${selectedAbsenceTeacher.name}${selectedAbsenceTeacher.role ? ` (${selectedAbsenceTeacher.role})` : ''}`
-    : '';
+  const absenceRecipientName = (recipient: AbsenceRecipient) => recipient.name ||
+    availableTeachers.find(teacher => teacher.id === recipient.id)?.name || t('classTeacherBadge');
+  const selectedAbsenceTeacherName = selectedAbsenceTeacher ? absenceRecipientName(selectedAbsenceTeacher) : '';
 
   // Compute allowed categories based on API message types
   const activeMessageType = komensMessageTypes.find(mt => {
@@ -330,47 +329,6 @@ export const NewMessagePage: React.FC = () => {
   const apiTeacherGroups = activeMessageType?.recipientsTypes?.find(rt => rt.code.toUpperCase() === 'US')?.recipients || [];
   const apiStudentGroups = activeMessageType?.recipientsTypes?.find(rt => rt.code.toUpperCase() === 'ZT')?.recipients || [];
 
-  // Sync recipient on initial replyOriginal or draftOriginal
-  useEffect(() => {
-    if (replyOriginal) {
-      const teacherMatch = availableTeachers.find(
-        (t) => t.name.toLowerCase() === replyOriginal.sender.name.toLowerCase()
-      );
-      if (teacherMatch) {
-        setSelectedIds([`indiv:${teacherMatch.id}`]);
-        return;
-      }
-
-      const studentMatch = availableStudents.find(
-        (s) => s.name.toLowerCase() === replyOriginal.sender.name.toLowerCase()
-      );
-      if (studentMatch) {
-        setSelectedIds([`indiv:${studentMatch.id}`]);
-        return;
-      }
-
-      setSelectedIds([`custom:${replyOriginal.sender.name}`]);
-    } else if (draftOriginal) {
-      if (draftOriginal.recipientIds && draftOriginal.recipientIds.length > 0) {
-        const mappedIds = draftOriginal.recipientIds.map((id) => {
-          if (id.includes(':')) return id;
-          const known = availableTeachers.some((t) => t.id === id) || availableStudents.some((s) => s.id === id);
-          return known ? `indiv:${id}` : `custom:${id}`;
-        });
-        if (mappedIds.length > 0) setSelectedIds(mappedIds);
-      } else if (draftOriginal.recipientName) {
-        const names = draftOriginal.recipientName.split(',').map((s) => s.trim()).filter(Boolean);
-        const mapped = names.map((name) => {
-          const tMatch = availableTeachers.find((t) => t.name.toLowerCase() === name.toLowerCase());
-          const sMatch = availableStudents.find((s) => s.name.toLowerCase() === name.toLowerCase());
-          const match = tMatch || sMatch;
-          return match ? `indiv:${match.id}` : `custom:${name}`;
-        });
-        if (mapped.length > 0) setSelectedIds(mapped);
-      }
-    }
-  }, [replyOriginal, draftOriginal, availableTeachers, availableStudents]);
-
   // Handle Category Change
   const handleCategoryChange = (newCat: MessageCategory) => {
     setCategory(newCat);
@@ -378,28 +336,10 @@ export const NewMessagePage: React.FC = () => {
     if (newCat === 'noticeboard') {
       setSelectedIds(['spec:ZT']);
       if (!title) setTitle(t('defaultNoticeboardTitle'));
-    } else if (newCat === 'absence') {
-      if (omluvenkaAllowedTeachers.length > 0) {
-        setSelectedIds([`indiv:${omluvenkaAllowedTeachers[0].id}`]);
-      }
+    } else if (newCat === 'absence' && category !== 'absence') {
+      setAbsenceRecipientResult(undefined);
     }
   };
-
-  useEffect(() => {
-    if (category === 'absence' && omluvenkaAllowedTeachers.length > 0) {
-      const currentIndiv = selectedIds.find((id) => id.startsWith('indiv:'))?.replace('indiv:', '');
-      const isValid = currentIndiv && omluvenkaAllowedTeachers.some((t) => t.id === currentIndiv);
-
-      if (omluvenkaAllowedTeachers.length === 1) {
-        const forcedTarget = `indiv:${omluvenkaAllowedTeachers[0].id}`;
-        if (selectedIds.length !== 1 || selectedIds[0] !== forcedTarget) {
-          setSelectedIds([forcedTarget]);
-        }
-      } else if (!isValid) {
-        setSelectedIds([`indiv:${omluvenkaAllowedTeachers[0].id}`]);
-      }
-    }
-  }, [category, omluvenkaAllowedTeachers, selectedIds]);
 
   // Close dropdown only on tap/click outside, preserving open state while scrolling
   useEffect(() => {
@@ -551,13 +491,23 @@ export const NewMessagePage: React.FC = () => {
 
   type Family = 'teachers' | 'students';
   const teacherGroupCodes = new Set(['my_teachers', ...apiTeacherGroups.map(g => g.code)]);
+  const individualType = (id: string): 'U' | 'Z' | undefined => {
+    if (replyRecipient?.id === id) return replyRecipient.type;
+    if (availableTeachers.some(t => t.id === id)) return 'U';
+    if (availableStudents.some(s => s.id === id)) return 'Z';
+    const savedIds = draftOriginal?.recipientIds;
+    if (!isAddressablePerson(id) || !savedIds?.includes(`indiv:${id}`)) return undefined;
+    const sender = messages.find(m => m.type === 'received' && m.sender.id === id)?.sender;
+    const savedType = draftOriginal?.recipientType;
+    return senderRecipientType(sender?.role) ?? (savedIds.length === 1 && (savedType === 'U' || savedType === 'Z') ? savedType : undefined);
+  };
   const familyOf = (id: string): Family | null => {
     const [kind, raw] = [id.split(':')[0], id.slice(id.indexOf(':') + 1)];
     if (kind === 'spec') return raw === 'UV' || raw === 'V' ? 'teachers' : 'students';
     if (kind === 'group') return teacherGroupCodes.has(raw) ? 'teachers' : 'students';
     if (kind === 'indiv') {
-      if (availableTeachers.some(t => t.id === raw) || omluvenkaAllowedTeachers.some(t => t.id === raw)) return 'teachers';
-      return 'students';
+      const type = individualType(raw);
+      if (type) return type === 'U' ? 'teachers' : 'students';
     }
     return null;
   };
@@ -620,20 +570,22 @@ export const NewMessagePage: React.FC = () => {
         };
       }
       if (id.startsWith('indiv:')) {
-        const indivId = id.split(':')[1];
-        const tObj = availableTeachers.find(t => t.id === indivId);
+        const indivId = id.slice('indiv:'.length);
+        const type = individualType(indivId);
+        const tObj = type === 'U' && availableTeachers.find(t => t.id === indivId);
         if (tObj) {
           return { id, name: tObj.name, sub: tObj.role || tObj.subjectName || t('teacherSingular'), type: 'U', iconType: 'teacher' as const };
         }
-        const s = availableStudents.find(s => s.id === indivId);
+        const s = type === 'Z' && availableStudents.find(s => s.id === indivId);
         if (s) {
           return { id, name: s.name, sub: studentSubLabel(s.className), type: 'Z', iconType: 'user' as const };
         }
-        const omluvenkaT = omluvenkaAllowedTeachers.find(t => t.id === indivId);
-        if (omluvenkaT) {
-          return { id, name: omluvenkaT.name, sub: omluvenkaT.role || t('classTeacherBadge'), type: 'U', iconType: 'teacher' as const };
-        }
-        return { id, name: t('unknownRecipient'), sub: t('recipient'), type: 'U', iconType: 'user' as const };
+        const name = replyRecipient?.id === indivId ? replyOriginal?.sender.name : draftOriginal?.recipients?.find(r => r.id === id)?.name;
+        return {
+          id, name: name || t('unknownRecipient'),
+          sub: type === 'U' ? t('teacherSingular') : type === 'Z' ? t('studentSingular') : t('recipient'),
+          type: type || '', iconType: type === 'U' ? 'teacher' as const : 'user' as const,
+        };
       }
       return null;
     }).filter(Boolean) as {
@@ -658,6 +610,7 @@ export const NewMessagePage: React.FC = () => {
     const studentGroupIds: string[] = [];
     const teacherIds: string[] = [];
     const studentIds: string[] = [];
+    let hasUnresolvedRecipient = false;
 
     selectedIds.forEach(id => {
       const raw = id.slice(id.indexOf(':') + 1);
@@ -674,8 +627,12 @@ export const NewMessagePage: React.FC = () => {
           studentGroupIds.push(raw);
         }
       } else if (id.startsWith('indiv:')) {
-        if (category === 'absence' || familyOf(id) === 'teachers') teacherIds.push(raw);
-        else studentIds.push(raw);
+        const type = category === 'absence' ? 'U' : individualType(raw);
+        if (type === 'U') teacherIds.push(raw);
+        else if (type === 'Z') studentIds.push(raw);
+        else hasUnresolvedRecipient = true;
+      } else {
+        hasUnresolvedRecipient = true;
       }
     });
 
@@ -683,8 +640,6 @@ export const NewMessagePage: React.FC = () => {
     if (studentGroupIds.length > 0) batches.push({ code: 'ZT', ids: studentGroupIds });
     if (teacherIds.length > 0) batches.push({ code: teacherIds.length > 1 ? 'UVV' : 'U', ids: teacherIds });
     if (studentIds.length > 0) batches.push({ code: studentIds.length > 1 ? 'ZVV' : 'Z', ids: studentIds });
-    // Only recipients typed in by hand: nothing to address, but the message is still allowed through.
-    if (batches.length === 0) batches.push({ code: 'U', ids: [] });
 
     const names = cards.map(c => c.name);
     const displayName = names.length > 3
@@ -693,21 +648,20 @@ export const NewMessagePage: React.FC = () => {
 
     return {
       displayName,
-      recipientTypeCode: category === 'absence' ? 'U' : batches[0].code,
+      recipientTypeCode: category === 'absence' ? 'U' : batches[0]?.code || '',
       recipientIds: batches.flatMap(batch => batch.ids),
-      isValid: true,
+      isValid: batches.length > 0 && !hasUnresolvedRecipient,
       batches,
     };
   };
 
   const recipientSummary = getRecipientSummary();
+  const hasRecipient = category === 'absence' ? Boolean(selectedAbsenceTeacherId) : recipientSummary.isValid;
+  const canSaveDraft = Boolean(text.trim()) || (category === 'absence' ? hasRecipient : Boolean(title.trim()) || selectedIds.length > 0);
+  const canSend = hasRecipient && (category === 'absence' || Boolean(title.trim())) && Boolean(text.trim());
 
   const handleSaveDraft = async () => {
-    const hasContent = (category === 'absence')
-      ? (Boolean(text.trim()) || selectedIds.length > 0)
-      : (Boolean(title.trim()) || Boolean(text.trim()) || selectedIds.length > 0);
-
-    if (!hasContent) {
+    if (!canSaveDraft) {
       setErrorMsg(t('draftMustContain'));
       return;
     }
@@ -719,16 +673,14 @@ export const NewMessagePage: React.FC = () => {
       ? (title.trim() || `${t('categoryAbsence')} (${formatCzechDate(absenceDateFrom, 'short')})`)
       : title.trim();
 
-    const absenceRecipId = selectedAbsenceTeacherId || (omluvenkaAllowedTeachers[0]?.id ?? '');
-    const absenceRecipName = selectedAbsenceTeacher?.name || recipientSummary.displayName;
     const recipientIdsForSave = category === 'absence'
-      ? (absenceRecipId ? [`indiv:${absenceRecipId}`] : selectedIds)
+      ? (selectedAbsenceTeacherId ? [`indiv:${selectedAbsenceTeacherId}`] : [])
       : selectedIds;
     const recipientTypeCodeForSave = category === 'absence'
       ? 'U'
       : (recipientSummary.recipientTypeCode || undefined);
     const recipientNameForSave = category === 'absence'
-      ? (absenceRecipName || undefined)
+      ? (selectedAbsenceTeacherName || undefined)
       : (recipientSummary.displayName || undefined);
 
     try {
@@ -772,11 +724,7 @@ export const NewMessagePage: React.FC = () => {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientSummary.isValid && category !== 'absence') {
-      setErrorMsg(t('selectRecipientWarning'));
-      return;
-    }
-    if (category === 'absence' && !selectedAbsenceTeacherId && omluvenkaAllowedTeachers.length === 0) {
+    if (!hasRecipient) {
       setErrorMsg(t('selectRecipientWarning'));
       return;
     }
@@ -799,13 +747,11 @@ export const NewMessagePage: React.FC = () => {
 
     let success = false;
     if (category === 'absence') {
-      const absenceRecipId = selectedAbsenceTeacherId || (omluvenkaAllowedTeachers[0]?.id ?? '');
-      const absenceRecipName = selectedAbsenceTeacher?.name || recipientSummary.displayName;
       success = await sendMessage({
         draftId,
-        recipientName: absenceRecipName,
+        recipientName: selectedAbsenceTeacherName,
         recipientTypeCode: 'U',
-        recipientIds: absenceRecipId ? [absenceRecipId] : recipientSummary.recipientIds,
+        recipientIds: [selectedAbsenceTeacherId],
         title: finalTitle,
         text: text.trim(),
         category,
@@ -1109,7 +1055,7 @@ export const NewMessagePage: React.FC = () => {
                 })()}
 
                 {/* Selected Summary Cards */}
-                {recipientSummary.isValid && (
+                {selectedIds.length > 0 && (
                   <div className="flex flex-col gap-1 mt-2">
                     <div className="flex items-center justify-between px-1 pb-1">
                       <span className="text-xs font-bold text-m3-on-surface-variant">
@@ -1161,6 +1107,9 @@ export const NewMessagePage: React.FC = () => {
                       </div>
                     ))}
                   </div>
+                )}
+                {!recipientSummary.isValid && (selectedIds.length > 0 || (replyOriginal && recipientEdits === null)) && (
+                  <p className="px-1 text-xs text-m3-on-surface-variant">{t('selectRecipientWarning')}</p>
                 )}
               </div>
             </div>
@@ -1323,7 +1272,23 @@ export const NewMessagePage: React.FC = () => {
                 <label className="text-xs font-bold text-m3-on-surface-variant font-display">
                   {t('recipientSingular')}
                 </label>
-                {omluvenkaAllowedTeachers.length <= 1 ? (
+                {!matchingResult ? (
+                  <p role="status" className="flex items-center gap-2 p-3 rounded-m3-xl bg-m3-surface-container-high text-sm text-m3-on-surface-variant">
+                    <MaterialMorphingLoader size={20} className="shrink-0 text-m3-primary" />
+                    {t('absenceRecipientLoading')}
+                  </p>
+                ) : absenceRecipients.length === 0 ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-m3-xl bg-m3-surface-container-high">
+                    <p role="status" className="text-sm text-m3-on-surface-variant">{t('absenceRecipientUnavailable')}</p>
+                    <button type="button" className="rounded-full px-3 py-1.5 bg-m3-surface-container-highest text-xs font-bold text-m3-primary m3-pressable"
+                      onClick={() => {
+                        setAbsenceRecipientResult(undefined);
+                        setAbsenceRecipientAttempt(attempt => attempt + 1);
+                      }}>
+                      {t('retry')}
+                    </button>
+                  </div>
+                ) : absenceRecipients.length === 1 ? (
                   <div className="flex items-center justify-between p-3.5 px-4 rounded-m3-2xl bg-m3-surface-container-high shadow-xs">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-full bg-m3-primary-container text-m3-on-primary-container font-extrabold flex items-center justify-center shrink-0 text-sm shadow-2xs">
@@ -1331,10 +1296,10 @@ export const NewMessagePage: React.FC = () => {
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="font-bold text-sm text-m3-on-surface truncate">
-                          {selectedAbsenceTeacher?.name || t('classTeacherBadge')}
+                          {selectedAbsenceTeacherName}
                         </span>
                         <span className="text-xs text-m3-on-surface-variant truncate">
-                          {selectedAbsenceTeacher?.role || t('classTeacherBadge')}
+                          {t('classTeacherBadge')}
                         </span>
                       </div>
                     </div>
@@ -1354,24 +1319,21 @@ export const NewMessagePage: React.FC = () => {
                             {selectedAbsenceTeacherName || t('selectRecipient')}
                           </span>
                           <span className="text-xs text-m3-on-surface-variant truncate">
-                            {selectedAbsenceTeacher?.role || t('classTeacherBadge')}
+                            {t('classTeacherBadge')}
                           </span>
                         </div>
                       </div>
                       <ChevronDown className="w-4 h-4 text-m3-on-surface-variant shrink-0" />
                     </div>
                     <select
+                      aria-label={t('recipientSingular')}
                       value={selectedAbsenceTeacherId}
-                      onChange={(e) => {
-                        const newId = e.target.value;
-                        setSelectedIds(newId ? [`indiv:${newId}`] : []);
-                      }}
+                      onChange={(e) => setAbsenceRecipientId(e.target.value)}
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full text-m3-on-surface bg-m3-surface-container-highest"
                     >
-                      {omluvenkaAllowedTeachers.map((tch) => (
-                        <option key={`tch-${tch.id}`} value={tch.id}>
-                          {tch.name} {tch.role ? `(${tch.role})` : ''}
-                        </option>
+                      <option value="" disabled>{t('selectRecipient')}</option>
+                      {absenceRecipients.map(recipient => (
+                        <option key={recipient.id} value={recipient.id}>{absenceRecipientName(recipient)}</option>
                       ))}
                     </select>
                   </div>
@@ -1486,19 +1448,9 @@ export const NewMessagePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                disabled={
-                  isSending ||
-                  isSavingDraft ||
-                  (category === 'absence'
-                    ? (!text.trim() && selectedIds.length === 0)
-                    : (!title.trim() && !text.trim() && selectedIds.length === 0))
-                }
+                disabled={isSending || isSavingDraft || !canSaveDraft}
                 className={`flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 rounded-full font-bold text-xs font-display transition-all ${
-                  isSending ||
-                  isSavingDraft ||
-                  (category === 'absence'
-                    ? (!text.trim() && selectedIds.length === 0)
-                    : (!title.trim() && !text.trim() && selectedIds.length === 0))
+                  isSending || isSavingDraft || !canSaveDraft
                     ? 'bg-m3-surface-container-highest/60 text-m3-on-surface-variant/40 cursor-not-allowed'
                     : 'bg-m3-surface-container-high hover:bg-m3-surface-container-highest text-m3-on-surface m3-pressable'
                 }`}
@@ -1509,19 +1461,9 @@ export const NewMessagePage: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={
-                  isSending ||
-                  isSavingDraft ||
-                  !recipientSummary.isValid ||
-                  (category !== 'absence' && !title.trim()) ||
-                  !text.trim()
-                }
+                disabled={isSending || isSavingDraft || !canSend}
                 className={`flex items-center gap-1.5 whitespace-nowrap px-4 py-2.5 rounded-full font-extrabold text-xs font-display transition-all shadow-sm ${
-                  isSending ||
-                  isSavingDraft ||
-                  !recipientSummary.isValid ||
-                  (category !== 'absence' && !title.trim()) ||
-                  !text.trim()
+                  isSending || isSavingDraft || !canSend
                     ? 'bg-m3-surface-container-highest text-m3-on-surface-variant/40 cursor-not-allowed'
                     : 'bg-m3-primary hover:bg-m3-primary/90 text-m3-on-primary m3-pressable shadow-m3-1'
                 }`}

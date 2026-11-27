@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useBackDismiss } from '../native/backDismiss';
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,27 +6,21 @@ import {
   ChevronsRight,
   Calendar as CalendarIcon,
   Clock,
-  MapPin,
-  User,
   AlertCircle,
-  Ban,
-  CalendarPlus,
-  X,
   Layers,
   Rows3,
   Columns3,
   CalendarDays,
-  PencilLine,
-  Pencil,
-  Trash2,
 } from 'lucide-react';
 import { MaterialMorphingLoader } from '../components/common/MaterialMorphingLoader';
 import { useDataStore } from '../stores/dataStore';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore, TimetableLayoutMode } from '../stores/settingsStore';
 import { LessonCard } from '../components/common/LessonCard';
+import { HolidayDetailsSheet } from '../components/common/HolidayDetailsSheet';
+import { LessonDetailsSheet } from '../components/common/LessonDetailsSheet';
+import { findLessonTopic } from '../domain/lessonTopic';
 import { Lesson, TestMark, TimetableData, TimetableDay, TimetableHour } from '../types/bakalari';
-import { cleanLessonGroup } from '../utils/textUtils';
 import { getHolidayInfo, HolidayInfo } from '../utils/holidayUtils';
 import {
   formatCzechDate,
@@ -164,9 +157,9 @@ export const TimetablePage: React.FC = () => {
     fetchTimetable,
     getCachedTimetableWeek,
     testMarks,
-    addTestMark,
-    updateTestMark,
-    removeTestMark,
+    teachingTopics,
+    isTeachingLoading,
+    fetchTeachingTopics,
   } = useDataStore();
   const { timetableLayout, setTimetableLayout, t, language: lang } = useSettingsStore();
   const { user } = useAuthStore();
@@ -231,71 +224,54 @@ export const TimetablePage: React.FC = () => {
     return initialDayOfWeek - 1;
   });
 
-  const [activeLessonModal, setActiveLessonModal] = useState<{
+  const [activeLesson, setActiveLesson] = useState<{
     lesson: Lesson;
     hour?: TimetableHour;
     day?: TimetableDay;
   } | null>(null);
 
-  const [activeHolidayModal, setActiveHolidayModal] = useState<{
+  const [activeHoliday, setActiveHoliday] = useState<{
     day: TimetableDay;
     holiday: HolidayInfo;
   } | null>(null);
 
-  // Description of the test mark in the lesson modal; saved on its own shortly after typing stops.
-  const [testDraft, setTestDraft] = useState('');
-  const pendingTestSave = React.useRef<{ id: string; description: string } | null>(null);
-
-  // Look up a user test mark for a concrete date + hour (never in permanent timetable)
   const testMarkFor = (date?: string, hourId?: number): TestMark | undefined =>
     activeTab !== 'permanent' && date && hourId !== undefined
-      ? testMarks.find((m) => m.date === date && m.hourId === hourId)
+      ? testMarks.find((mark) => mark.date === date && mark.hourId === hourId)
       : undefined;
 
-  const openLessonModal = (lesson: Lesson, hour: TimetableHour | undefined, day: TimetableDay | undefined) => {
-    setTestDraft('');
-    setActiveLessonModal({ lesson, hour, day });
+  const openLesson = (lesson: Lesson, hour?: TimetableHour, day?: TimetableDay) => {
+    setActiveLesson({ lesson, hour, day });
   };
 
-  const closeLessonModal = () => {
-    // Typing that the delay below has not saved yet.
-    const pending = pendingTestSave.current;
-    if (pending) updateTestMark(pending.id, { description: pending.description });
-    pendingTestSave.current = null;
-    setTestDraft('');
-    setActiveLessonModal(null);
-  };
+  const holidayDetailsTrigger = (day: TimetableDay, holiday: HolidayInfo) => ({
+    role: 'button',
+    tabIndex: 0,
+    'aria-haspopup': 'dialog' as const,
+    'aria-label': [holiday.title, formatCzechDate(day.date, 'full', lang)].filter(Boolean).join(', '),
+    onClick: () => setActiveHoliday({ day, holiday }),
+    onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      if (!event.repeat) setActiveHoliday({ day, holiday });
+    },
+  });
 
-  useBackDismiss(activeLessonModal !== null, closeLessonModal);
-  useBackDismiss(activeHolidayModal !== null, () => setActiveHolidayModal(null));
-
-  const modalTestMark = activeTab !== 'permanent' && activeLessonModal?.day?.date
-    ? testMarkFor(activeLessonModal.day.date, activeLessonModal.hour?.id)
+  const lessonDate = activeTab === 'current' ? activeLesson?.day?.date : undefined;
+  const lessonTopic = activeLesson && lessonDate
+    ? findLessonTopic(activeLesson.lesson, activeLesson.hour, activeLesson.day, teachingTopics)
     : undefined;
-
-  const modalTestMarkId = modalTestMark?.id;
+  const shouldFetchTopic = Boolean(lessonDate && activeLesson?.lesson.subjectId && !lessonTopic);
+  const triedTopics = React.useRef(false);
   React.useEffect(() => {
-    setTestDraft(modalTestMark?.description || '');
-    pendingTestSave.current = null;
-    // Only a different mark (or none) resets the field, not our own saves.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalTestMarkId]);
+    if (!shouldFetchTopic || isTeachingLoading || triedTopics.current) return;
+    triedTopics.current = true;
+    void fetchTeachingTopics(true);
+  }, [shouldFetchTopic, isTeachingLoading, fetchTeachingTopics]);
 
-  React.useEffect(() => {
-    if (!modalTestMark) return;
-    const description = testDraft.trim();
-    if (description === (modalTestMark.description || '')) {
-      pendingTestSave.current = null;
-      return;
-    }
-    pendingTestSave.current = { id: modalTestMark.id, description };
-    const timer = window.setTimeout(() => {
-      updateTestMark(modalTestMark.id, { description });
-      pendingTestSave.current = null;
-    }, 500);
-    return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testDraft, modalTestMark?.id, modalTestMark?.description]);
+  const testSlot = lessonDate && activeLesson?.hour && !activeLesson.lesson.change?.typeAbbrev
+    ? { date: lessonDate, hourId: activeLesson.hour.id }
+    : undefined;
 
   // When switching tabs or changing week offsets, fetch corresponding timetable if needed
   React.useEffect(() => {
@@ -524,6 +500,25 @@ export const TimetablePage: React.FC = () => {
   }, [currentTimetableData, allHours]);
 
   const selectedDay = currentTimetableData.days[selectedDayIndex] || currentTimetableData.days[0];
+  const showDayView = !isLoading && !fetchError && timetableLayout === 'day' && (totalLessonsInView > 0 || hasHolidaysInView);
+  const daySelectorRef = React.useRef<HTMLDivElement>(null);
+
+  React.useLayoutEffect(() => {
+    const row = daySelectorRef.current;
+    const selected = row?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
+    if (!row || !selected) return;
+
+    const revealSelected = () => {
+      const viewport = row.getBoundingClientRect();
+      const chip = selected.getBoundingClientRect();
+      const offset = chip.left < viewport.left ? chip.left - viewport.left : Math.max(0, chip.right - viewport.right);
+      if (offset) row.scrollLeft += offset;
+    };
+    revealSelected();
+    const observer = new ResizeObserver(revealSelected);
+    observer.observe(row);
+    return () => observer.disconnect();
+  }, [showDayView, activeTab, weekOffset, selectedDayIndex, currentTimetableData.days.length]);
 
   // Re-check current time on interval
   const [currentDate, setCurrentDate] = useState<Date>(() => getAppDate());
@@ -1091,7 +1086,7 @@ export const TimetablePage: React.FC = () => {
               return (
                 <div
                   key={day.dayOfWeek}
-                  onClick={() => holiday.isHoliday && setActiveHolidayModal({ day, holiday })}
+                  {...(holiday.isHoliday ? holidayDetailsTrigger(day, holiday) : {})}
                   className={`py-2 px-1 rounded-m3-xl flex flex-col items-center justify-center text-center transition-all min-w-0 overflow-hidden ${
                     holiday.isHoliday ? 'cursor-pointer hover:brightness-105' : ''
                   } ${
@@ -1158,7 +1153,7 @@ export const TimetablePage: React.FC = () => {
                       return (
                         <div
                           key={`${day.dayOfWeek}-${hour.id}`}
-                          onClick={() => setActiveHolidayModal({ day, holiday })}
+                          {...holidayDetailsTrigger(day, holiday)}
                           title={`${holiday.badgeLabel}: ${holiday.title}`}
                           style={{ containerType: 'inline-size' }}
                           className="relative h-full min-w-0 min-h-[72px] sm:min-h-[78px] rounded-m3-xl p-1 sm:p-1.5 flex flex-col items-center justify-center text-center cursor-pointer transition-all shadow-xs select-none overflow-hidden bg-gradient-to-b from-sky-500/15 via-sky-500/8 to-sky-500/15 hover:bg-sky-500/20"
@@ -1203,11 +1198,12 @@ export const TimetablePage: React.FC = () => {
                       >
                         <LessonCard
                           lesson={lesson}
+                          day={day}
                           hour={hour}
                           variant="matrix"
                           isOngoing={isCellToday && isHourCurrent}
                           testMark={activeTab === 'permanent' ? undefined : testMarkFor(day.date, hour.id)}
-                          onClick={() => lesson && openLessonModal(lesson, hour, day)}
+                          onClick={() => lesson && openLesson(lesson, hour, day)}
                         />
 
                         {/* Grid intersection dot where 4 classes' corners touch */}
@@ -1307,7 +1303,7 @@ export const TimetablePage: React.FC = () => {
                     {/* Sticky Day Label */}
                     <div className="sticky left-0 z-20 w-16 sm:w-20 bg-m3-surface-container pr-1 shrink-0 -my-1 py-1">
                       <div
-                        onClick={() => holiday.isHoliday && setActiveHolidayModal({ day, holiday })}
+                        {...(holiday.isHoliday ? holidayDetailsTrigger(day, holiday) : {})}
                         className={`w-full h-[74px] sm:h-[80px] rounded-m3-xl flex flex-col items-center justify-center gap-0.5 px-1 py-1 transition-all ${
                           holiday.isHoliday ? 'cursor-pointer hover:brightness-105' : ''
                         } ${
@@ -1330,7 +1326,7 @@ export const TimetablePage: React.FC = () => {
                     {/* If holiday day with no lessons: full row banner */}
                     {day.atoms.length === 0 && holiday.isHoliday ? (
                       <div
-                        onClick={() => setActiveHolidayModal({ day, holiday })}
+                        {...holidayDetailsTrigger(day, holiday)}
                         className="relative h-[74px] sm:h-[80px] rounded-m3-xl px-4 sm:px-6 flex items-center justify-between gap-3 cursor-pointer transition-all select-none shadow-xs group bg-gradient-to-r from-sky-500/15 via-sky-500/10 to-sky-500/5 hover:bg-sky-500/20 shrink-0"
                         style={{
                           width: `calc(${effectiveHours.length} * var(--hour-w, 105px) + ${(effectiveHours.length - 1) * 8}px)`,
@@ -1387,11 +1383,12 @@ export const TimetablePage: React.FC = () => {
                             >
                               <LessonCard
                                 lesson={lesson}
+                                day={day}
                                 hour={hour}
                                 variant="compact"
                                 isOngoing={isCellToday && isCellCurrentHour}
                                 testMark={activeTab === 'permanent' ? undefined : testMarkFor(day.date, hour.id)}
-                                onClick={() => lesson && openLessonModal(lesson, hour, day)}
+                                onClick={() => lesson && openLesson(lesson, hour, day)}
                               />
 
                               {/* Straight vertical timeline indicator segment for this active hour column */}
@@ -1426,12 +1423,12 @@ export const TimetablePage: React.FC = () => {
       )}
 
       {/* 3C. VIEW MODE 3: DETAILED DAY VIEW (Po, Út, St, Čt, Pá Chips + Large Cards) */}
-      {!isLoading && !fetchError && timetableLayout === 'day' && (totalLessonsInView > 0 || hasHolidaysInView) && (
-        <div className="flex flex-col gap-4">
+      {showDayView && (
+        <div className="flex min-w-0 flex-col gap-4">
           {/* Day Selector Chips */}
-          <div className="flex items-center gap-2 touch-scroll-x pb-1 no-scrollbar">
+          <div ref={daySelectorRef} className="touch-scroll-x flex w-full min-w-0 items-center gap-1.5 p-1 no-scrollbar sm:gap-2">
             {currentTimetableData.days.map((day, idx) => {
-              const isSelected = selectedDayIndex === idx;
+              const isSelected = day === selectedDay;
               const isToday = isTodayDay(day);
               const hasChanges = day.atoms?.some((a) => a.hasChange && !a.change?.typeAbbrev);
               const holiday = getHolidayInfo(day);
@@ -1439,10 +1436,12 @@ export const TimetablePage: React.FC = () => {
               return (
                 <button
                   key={day.dayOfWeek}
+                  type="button"
+                  aria-pressed={isSelected}
                   onClick={() => setSelectedDayIndex(idx)}
-                  className={`flex-1 min-w-[72px] h-[58px] py-2 px-3 rounded-m3-xl font-display font-extrabold text-xs flex flex-col items-center justify-center gap-0.5 transition-all m3-pressable ${
+                  className={`flex-[1_0_52px] min-w-0 h-[58px] py-2 px-1 sm:px-3 rounded-m3-xl font-display font-extrabold text-xs flex flex-col items-center justify-center gap-0.5 transition-colors m3-pressable ${
                     isSelected
-                      ? 'bg-m3-primary text-m3-on-primary shadow-sm scale-[1.02]'
+                      ? 'bg-m3-primary text-m3-on-primary shadow-sm'
                       : holiday.isHoliday
                       ? 'bg-sky-500/15 text-m3-on-surface'
                       : 'bg-m3-surface-container text-m3-on-surface hover:bg-m3-surface-container-high'
@@ -1475,7 +1474,7 @@ export const TimetablePage: React.FC = () => {
                       <span className="truncate">{holiday.shortBadgeLabel}</span>
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold opacity-85 leading-tight">
+                    <span className="max-w-full truncate text-[10px] font-bold opacity-85 leading-tight">
                       {day.date ? formatCzechDate(day.date, 'short') : t('permanentScheduleShort')}
                     </span>
                   )}
@@ -1501,7 +1500,9 @@ export const TimetablePage: React.FC = () => {
                 if (selHoliday?.isHoliday) {
                   return (
                     <button
-                      onClick={() => setActiveHolidayModal({ day: selectedDay, holiday: selHoliday })}
+                      type="button"
+                      aria-haspopup="dialog"
+                      onClick={() => setActiveHoliday({ day: selectedDay, holiday: selHoliday })}
                       className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 m3-pressable transition-colors bg-sky-500/15 text-sky-700 dark:text-sky-300 hover:bg-sky-500/25"
                     >
                       <span className="truncate max-w-[200px] sm:max-w-none">{selHoliday.badgeLabel}: {selHoliday.title}</span>
@@ -1534,12 +1535,13 @@ export const TimetablePage: React.FC = () => {
                     >
                       <LessonCard
                         lesson={lesson}
+                        day={selectedDay}
                         hour={hour}
                         variant="full"
                         radiusClass={responsiveGroupRadius(lessonIndex, selectedDay.atoms!.length, { base: 1, sm: 2, lg: 3 })}
                         isOngoing={isCellToday && isCellCurrentHour}
                         testMark={activeTab === 'permanent' || !selectedDay ? undefined : testMarkFor(selectedDay.date, hour?.id)}
-                        onClick={() => openLessonModal(lesson, hour, selectedDay)}
+                        onClick={() => openLesson(lesson, hour, selectedDay)}
                       />
 
                       {/* Straight vertical timeline indicator for active hour on day view card */}
@@ -1561,7 +1563,7 @@ export const TimetablePage: React.FC = () => {
                 if (selHoliday?.isHoliday) {
                   return (
                     <div
-                      onClick={() => setActiveHolidayModal({ day: selectedDay, holiday: selHoliday })}
+                      {...holidayDetailsTrigger(selectedDay, selHoliday)}
                       className="col-span-full py-12 px-6 rounded-m3-3xl flex flex-col items-center justify-center text-center gap-3 cursor-pointer shadow-xs transition-all hover:scale-[1.01] select-none bg-gradient-to-br from-sky-500/15 via-m3-surface-container to-sky-500/5"
                     >
                       <div className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-xs bg-sky-500/20 text-sky-600 dark:text-sky-400">
@@ -1599,311 +1601,27 @@ export const TimetablePage: React.FC = () => {
         </div>
       )}
 
-      {/* 4. Lesson Details Modal */}
-      {activeLessonModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in"
-            onClick={closeLessonModal}
-          />
-
-          <div className="relative w-full max-w-md p-6 rounded-m3-3xl bg-m3-surface-container text-m3-on-surface shadow-2xl z-10 flex flex-col gap-4 animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="text-xs font-extrabold text-m3-primary font-display uppercase tracking-wider">
-                  {activeLessonModal.lesson.subjectAbbrev} • {activeLessonModal.hour?.caption || activeLessonModal.lesson.hourId}. hodina
-                </span>
-                <h3 className="text-xl font-black font-display text-m3-on-surface mt-0.5">
-                  {activeLessonModal.lesson.subjectName}
-                </h3>
-              </div>
-
-              <button
-                onClick={closeLessonModal}
-                className="w-8 h-8 rounded-full bg-m3-surface-container-high flex items-center justify-center text-m3-on-surface-variant hover:text-m3-on-surface m3-pressable"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Change banner if substitution / cancellation / addition / room change */}
-            {activeLessonModal.lesson.hasChange && activeLessonModal.lesson.change && (() => {
-              const ch = activeLessonModal.lesson.change;
-              const rawType = (ch.changeType || '').toLowerCase();
-              const rawTypeName = (ch.typeName || '').toLowerCase();
-              const rawDesc = (ch.description || '').toLowerCase();
-              const summary = `${rawType} ${rawTypeName} ${rawDesc}`;
-
-              const isCanceled =
-                ch.changeType === 'Canceled' ||
-                ch.changeType === 'Removed' ||
-                summary.includes('cancel') ||
-                summary.includes('odpad') ||
-                summary.includes('vyjmut') ||
-                summary.includes('removed');
-              const isAdded =
-                !isCanceled &&
-                (ch.changeType === 'Added' ||
-                  summary.includes('added') ||
-                  summary.includes('přidán') ||
-                  summary.includes('pridan') ||
-                  summary.includes('navíc') ||
-                  summary.includes('navic'));
-              const isRoom =
-                !isCanceled &&
-                !isAdded &&
-                (ch.changeType === 'RoomChanged' ||
-                  summary.includes('room') ||
-                  summary.includes('místnost') ||
-                  summary.includes('učebn') ||
-                  summary.includes('přesun'));
-
-              const bannerBg = isCanceled
-                ? 'bg-rose-500/15 text-rose-800 dark:text-rose-200'
-                : isAdded
-                ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200'
-                : isRoom
-                ? 'bg-sky-500/15 text-sky-800 dark:text-sky-200'
-                : 'bg-amber-500/15 text-amber-800 dark:text-amber-200';
-
-              const Icon = isCanceled ? Ban : isAdded ? CalendarPlus : isRoom ? MapPin : AlertCircle;
-              const iconColor = isCanceled
-                ? 'text-rose-500'
-                : isAdded
-                ? 'text-emerald-500'
-                : isRoom
-                ? 'text-sky-500'
-                : 'text-amber-500';
-
-              const title = isAdded
-                ? (ch.typeName || t('addedToTimetable'))
-                : isCanceled
-                ? (ch.typeName || t('canceledLessonType'))
-                : isRoom
-                ? (ch.typeName || t('roomChangedType'))
-                : (ch.typeName || t('timetableChange'));
-
-              return (
-                <div className={`p-3 rounded-m3-xl ${bannerBg} flex items-start gap-2.5 text-xs font-semibold`}>
-                  <Icon className={`w-4 h-4 ${iconColor} shrink-0 mt-0.5`} />
-                  <div>
-                    <span className="font-extrabold block">
-                      {title}
-                    </span>
-                    {ch.description && <p className="mt-0.5">{ch.description}</p>}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Info Items */}
-            <div className="space-y-2.5 text-xs">
-              <div className="p-3 rounded-m3-xl bg-m3-surface-container-high flex items-center justify-between">
-                <span className="text-m3-on-surface-variant flex items-center gap-1.5 font-bold">
-                  <Clock className="w-4 h-4 text-m3-primary" />
-                  {t('lessonTimeModal')}
-                </span>
-                <span className="font-extrabold text-m3-on-surface font-display">
-                  {activeLessonModal.hour ? `${activeLessonModal.hour.beginTime} – ${activeLessonModal.hour.endTime}` : '-'}
-                </span>
-              </div>
-
-              {(activeLessonModal.lesson.roomAbbrev || activeLessonModal.lesson.roomId) && (
-                <div className="p-3 rounded-m3-xl bg-m3-surface-container-high flex items-center justify-between">
-                  <span className="text-m3-on-surface-variant flex items-center gap-1.5 font-bold">
-                    <MapPin className="w-4 h-4 text-m3-primary" />
-                    {t('roomModal')}
-                  </span>
-                  <span className="font-extrabold text-m3-on-surface font-display">
-                    {activeLessonModal.lesson.roomAbbrev || activeLessonModal.lesson.roomId}
-                  </span>
-                </div>
-              )}
-
-              {(activeLessonModal.lesson.teacherName || activeLessonModal.lesson.teacherAbbrev) && (
-                <div className="p-3 rounded-m3-xl bg-m3-surface-container-high flex items-center justify-between">
-                  <span className="text-m3-on-surface-variant flex items-center gap-1.5 font-bold">
-                    <User className="w-4 h-4 text-m3-primary" />
-                    {t('teacherModal')}
-                  </span>
-                  <span className="font-extrabold text-m3-on-surface font-display">
-                    {activeLessonModal.lesson.teacherName || activeLessonModal.lesson.teacherAbbrev}
-                    {activeLessonModal.lesson.teacherName && activeLessonModal.lesson.teacherAbbrev && activeLessonModal.lesson.teacherName !== activeLessonModal.lesson.teacherAbbrev && (
-                      <span className="ml-1.5 text-xs text-m3-on-surface-variant font-normal">
-                        ({activeLessonModal.lesson.teacherAbbrev})
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )}
-
-              {activeLessonModal.lesson.change?.substituteTeacher && (
-                <div className="p-3 rounded-m3-xl bg-amber-500/15 text-amber-800 dark:text-amber-200 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 font-bold">
-                    <User className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    {t('substituteTeacherModal')}
-                  </span>
-                  <span className="font-extrabold text-amber-900 dark:text-amber-100 font-display">
-                    {activeLessonModal.lesson.change.substituteTeacher}
-                  </span>
-                </div>
-              )}
-
-              {(() => {
-                const modalGroup = cleanLessonGroup(activeLessonModal.lesson.group, user?.className);
-                if (!modalGroup) return null;
-                return (
-                  <div className="p-3 rounded-m3-xl bg-m3-surface-container-high flex items-center justify-between">
-                    <span className="text-m3-on-surface-variant flex items-center gap-1.5 font-bold">
-                      <Layers className="w-4 h-4 text-m3-primary" />
-                      {t('groupOrClass')}
-                    </span>
-                    <span className="font-extrabold text-m3-on-surface font-display">
-                      {modalGroup}
-                    </span>
-                  </div>
-                );
-              })()}
-
-              {activeTab === 'permanent' && activeLessonModal.lesson.cycle && activeLessonModal.lesson.cycle !== 'both' && (
-                <div className="p-3 rounded-m3-xl bg-m3-surface-container-high flex items-center justify-between">
-                  <span className="text-m3-on-surface-variant flex items-center gap-1.5 font-bold">
-                    <CalendarDays className="w-4 h-4 text-m3-primary" />
-                    {t('cycleModal')}
-                  </span>
-                  <span className={`font-extrabold px-2.5 py-0.5 rounded-full text-xs font-display ${
-                    activeLessonModal.lesson.cycle === 'odd'
-                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
-                      : 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
-                  }`}>
-                    {activeLessonModal.lesson.cycle === 'odd' ? t('oddWeek') : t('evenWeek')}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Test mark (user-flagged "test being written") – only for real dated hours */}
-            {activeTab === 'current' && activeLessonModal.day?.date && activeLessonModal.hour && !activeLessonModal.lesson.change?.typeAbbrev && (
-              <div className="p-3 rounded-m3-2xl bg-pink-500/10 flex flex-col gap-2.5">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <PencilLine className="w-4 h-4 text-pink-500 shrink-0" />
-                  <span className="text-xs font-extrabold uppercase tracking-wider font-display text-m3-on-surface truncate">
-                    {t('testMarkTitle')}
-                  </span>
-                </div>
-
-                {/* Same height with and without a mark: the button turns into the field with Cancel beside it. */}
-                {modalTestMark ? (
-                  <div className="flex items-center gap-2 h-9">
-                    <input
-                      type="text"
-                      value={testDraft}
-                      onChange={(e) => setTestDraft(e.target.value)}
-                      placeholder={t('testDescriptionPlaceholder')}
-                      maxLength={120}
-                      className="min-w-0 flex-1 h-full px-3 rounded-m3-xl bg-m3-surface-container-high text-m3-on-surface text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-500/40"
-                    />
-                    <button
-                      onClick={() => {
-                        pendingTestSave.current = null;
-                        removeTestMark(modalTestMark.id);
-                      }}
-                      className="h-full px-4 rounded-full bg-m3-surface-container-high text-m3-on-surface-variant text-xs font-bold m3-pressable shrink-0"
-                    >
-                      {t('cancel')}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => addTestMark({
-                      date: activeLessonModal.day!.date!,
-                      hourId: activeLessonModal.hour!.id,
-                      description: '',
-                    })}
-                    className="w-full h-9 rounded-full bg-pink-500 hover:bg-pink-600 text-white text-xs font-extrabold font-display m3-pressable transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <PencilLine className="w-3.5 h-3.5" />
-                    {t('testMarkAdd')}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Close button */}
-            <button
-              onClick={closeLessonModal}
-              className="w-full py-2.5 rounded-full bg-m3-primary hover:bg-m3-primary/90 text-m3-on-primary font-bold font-display text-xs m3-pressable"
-            >
-              {t('close')}
-            </button>
-          </div>
-        </div>
+      {activeLesson && (
+        <LessonDetailsSheet
+          lesson={activeLesson.lesson}
+          day={activeLesson.day}
+          hour={activeLesson.hour}
+          permanent={activeTab === 'permanent'}
+          className={user?.className}
+          topic={lessonTopic}
+          isTopicLoading={shouldFetchTopic && isTeachingLoading}
+          testSlot={testSlot}
+          testMark={testMarkFor(testSlot?.date, testSlot?.hourId)}
+          onClose={() => setActiveLesson(null)}
+        />
       )}
 
-      {/* 5. Holiday Details Modal */}
-      {activeHolidayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in"
-            onClick={() => setActiveHolidayModal(null)}
-          />
-
-          <div className="relative w-full max-w-md p-6 rounded-m3-3xl bg-m3-surface-container text-m3-on-surface shadow-2xl z-10 flex flex-col gap-4 animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="text-xs font-black font-display uppercase tracking-wider text-sky-600 dark:text-sky-400">
-                  {activeHolidayModal.holiday.badgeLabel}
-                </span>
-                <h3 className="text-xl font-black font-display text-m3-on-surface mt-0.5">
-                  {activeHolidayModal.holiday.title}
-                </h3>
-              </div>
-
-              <button
-                onClick={() => setActiveHolidayModal(null)}
-                className="w-8 h-8 rounded-full bg-m3-surface-container-high flex items-center justify-center text-m3-on-surface-variant hover:text-m3-on-surface m3-pressable"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Content Details */}
-            <div className="flex flex-col gap-3 py-1">
-              <div className="flex items-center gap-3 p-3 rounded-m3-xl bg-m3-surface-container-high/60 text-sm">
-                <CalendarDays className="w-5 h-5 text-m3-primary shrink-0" />
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-m3-on-surface-variant">{t('events')} / Datum</span>
-                  <span className="font-extrabold text-m3-on-surface text-sm">
-                    {getDayOfWeekName(activeHolidayModal.day.dayOfWeek || activeHolidayModal.day.dayOfWeekName)}, {formatCzechDate(activeHolidayModal.day.date, 'full')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-m3-xl text-xs flex flex-col gap-1.5 bg-sky-500/10 text-m3-on-surface">
-                <div className="font-bold text-sky-700 dark:text-sky-300">
-                  <span>
-                    {activeHolidayModal.holiday.isPublicHoliday
-                      ? 'Státní svátek České republiky'
-                      : activeHolidayModal.holiday.badgeLabel}
-                  </span>
-                </div>
-                <p className="text-m3-on-surface-variant leading-relaxed">
-                  {activeHolidayModal.holiday.description || t('dayOffNotice')}
-                </p>
-              </div>
-            </div>
-
-            {/* Close Button */}
-            <button
-              onClick={() => setActiveHolidayModal(null)}
-              className="w-full py-2.5 rounded-full bg-m3-primary hover:bg-m3-primary/90 text-m3-on-primary font-bold font-display text-xs m3-pressable transition-colors"
-            >
-              {t('close')}
-            </button>
-          </div>
-        </div>
+      {activeHoliday && (
+        <HolidayDetailsSheet
+          day={activeHoliday.day}
+          holiday={activeHoliday.holiday}
+          onClose={() => setActiveHoliday(null)}
+        />
       )}
     </div>
   );

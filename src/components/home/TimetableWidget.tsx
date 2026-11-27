@@ -1,9 +1,9 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React from 'react';
 import { Calendar, CalendarDays, ChevronRight, Loader2 } from 'lucide-react';
 import { useDataStore } from '../../stores/dataStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { LessonCard } from '../common/LessonCard';
-import { formatCzechDate, getAppDate, getAppLanguage, getCurrentTimetableHour, parseTimeToMinutes, getTimetableHourProgress, formatHourTime, getDayOfWeekName } from '../../utils/dateUtils';
+import { formatCzechDate, getAppDate, getCurrentTimetableHour, parseTimeToMinutes, getTimetableHourProgress, formatHourTime, getDayOfWeekName } from '../../utils/dateUtils';
 import { getHolidayInfo } from '../../utils/holidayUtils';
 import { selectTimetableDay } from '../../domain/timetableSelection';
 
@@ -19,7 +19,7 @@ export const TimetableWidget: React.FC = () => {
     isTimetableLoading,
     isRefreshing,
   } = useDataStore();
-  const { setActiveScreen, t } = useSettingsStore();
+  const { setActiveScreen, t, language } = useSettingsStore();
 
   // Keep current app date & time reactive to lastUpdated and 60s interval
   const [now, setNow] = React.useState<Date>(() => getAppDate());
@@ -36,7 +36,7 @@ export const TimetableWidget: React.FC = () => {
   // Show the nearest relevant school day:
   // - If today is a school day and lessons are still ongoing / ahead: show TODAY ("Dnešní rozvrh")
   // - When school has ended for today ("po škole"): switch to TOMORROW ("Zítřejší rozvrh") with tomorrow's date & schedule!
-  // - On Friday after school or Saturday: show Monday ("Rozvrh na pondělí")
+  // - On Friday after school or Saturday: show Monday's date and schedule.
   // - On Sunday: show Monday ("Zítřejší rozvrh")
   const selection = React.useMemo(() => {
     const result = selectTimetableDay(
@@ -48,13 +48,13 @@ export const TimetableWidget: React.FC = () => {
         browsed: timetable,
         getCachedWeek: getCachedTimetableWeek,
       },
-      getAppLanguage()
+      language,
     );
     if (result.day && !result.day.dayOfWeekName) {
-      return { ...result, day: { ...result.day, dayOfWeekName: getDayOfWeekName(result.day.dayOfWeek) } };
+      return { ...result, day: { ...result.day, dayOfWeekName: getDayOfWeekName(result.day.dayOfWeek, language) } };
     }
     return result;
-  }, [actualTimetable, permanentTimetable, nextWeekTimetable, timetable, getCachedTimetableWeek, now]);
+  }, [actualTimetable, permanentTimetable, nextWeekTimetable, timetable, getCachedTimetableWeek, now, language]);
 
   const todayData = selection.day;
   const isShowingPermanent = selection.isPerm;
@@ -199,88 +199,30 @@ export const TimetableWidget: React.FC = () => {
     return todayData ? getHolidayInfo(todayData) : getHolidayInfo(now);
   }, [todayData, now]);
 
-  // The header must stay on one line: when "Pondělí (23.11.)" does not fit, the pill shows only the date.
-  // The width the full header needs is measured while it is shown in full, then compared with the
-  // available width, so a resize or a late font swap never makes it flip back and forth.
-  const headerRef = useRef<HTMLDivElement>(null);
-  const [availableWidth, setAvailableWidth] = useState(0);
-  const [needed, setNeeded] = useState<{ key: string; width: number } | null>(null);
-  const [fontsTick, setFontsTick] = useState(0);
-  const dayName = todayData ? getDayOfWeekName(todayData.dayOfWeek || todayData.dayOfWeekName) : t('monday');
-  const shortDate = todayData?.date ? formatCzechDate(todayData.date, 'short') : '';
-  const contentKey = `${dayName}|${shortDate}|${selection.isToday}|${selection.isTomorrow}|${selection.isNextMonday}|${isShowingPermanent}|${isTimetableLoading || isRefreshing}|${getAppLanguage()}`;
-  const compact = Boolean(shortDate) && needed?.key === contentKey && needed.width > availableWidth;
-  const compactRef = useRef(compact);
-  const contentKeyRef = useRef(contentKey);
-  compactRef.current = compact;
-  contentKeyRef.current = contentKey;
-  const dayPillText = todayData
-    ? compact
-      ? shortDate
-      : `${dayName}${shortDate ? ` (${shortDate})` : ''}`
-    : dayName;
-
-  const measureHeader = React.useCallback(() => {
-    const el = headerRef.current;
-    if (!el || compactRef.current) return;
-    const style = getComputedStyle(el);
-    const gap = parseFloat(style.columnGap) || 0;
-    const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
-    const kids = Array.from(el.children) as HTMLElement[];
-    const width = kids.reduce((sum, kid) => sum + kid.getBoundingClientRect().width, 0) + gap * Math.max(0, kids.length - 1) + padding;
-    const key = contentKeyRef.current;
-    setNeeded((prev) => (prev && prev.key === key && Math.abs(prev.width - width) < 0.5 ? prev : { key, width }));
-  }, []);
-
-  useLayoutEffect(() => {
-    measureHeader();
-  }, [contentKey, fontsTick, measureHeader]);
-
-  useLayoutEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const update = () => {
-      setAvailableWidth(el.clientWidth);
-      measureHeader();
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    Array.from(el.children).forEach((kid) => observer.observe(kid));
-    let cancelled = false;
-    void document.fonts?.ready.then(() => {
-      if (cancelled) return;
-      setNeeded(null);
-      setFontsTick((tick) => tick + 1);
-    });
-    return () => {
-      cancelled = true;
-      observer.disconnect();
-    };
-  }, [measureHeader]);
+  const dayName = todayData ? getDayOfWeekName(todayData.dayOfWeek ?? todayData.dayOfWeekName, language) : '';
+  const heading = selection.isToday ? t('todayTimetable')
+    : selection.isTomorrow ? t('tomorrowTimetable')
+    : dayName || t('upcomingTimetable');
+  const shortDate = formatCzechDate(todayData?.date, 'short', language);
+  const headingDate = language === 'cs' && (selection.isToday || selection.isTomorrow)
+    ? shortDate.replace(/\s+/g, '')
+    : shortDate;
 
   return (
     <div className="w-full flex flex-col gap-2.5">
       {/* Top Header Row */}
-      <div ref={headerRef} className="flex items-center justify-between gap-2 px-1 whitespace-nowrap">
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <h3 className="text-base sm:text-lg font-bold font-display text-m3-on-surface">
-            {selection.isToday
-              ? t('todayTimetable')
-              : selection.isTomorrow
-                ? t('tomorrowTimetable')
-                : selection.isNextMonday
-                  ? t('nextMondayTimetable')
-                  : t('upcomingTimetable')}
+            {heading}{headingDate && <> <span className="whitespace-nowrap">({headingDate})</span></>}
           </h3>
-          <span className="px-2.5 py-0.5 text-xs font-black rounded-full bg-m3-primary-container text-m3-on-primary-container font-display flex items-center gap-1.5">
-            <span>{dayPillText}</span>
-            {isTimetableLoading || isRefreshing ? (
-              <Loader2 className="w-3 h-3 animate-spin opacity-80" />
-            ) : (
-              isShowingPermanent && !shownHoliday.isHoliday && <span className="opacity-75 font-normal text-[10px]">• {t('permanentScheduleShort')}</span>
-            )}
-          </span>
+          {isTimetableLoading || isRefreshing ? (
+            <Loader2 aria-hidden="true" className="size-3 shrink-0 animate-spin text-m3-primary" />
+          ) : isShowingPermanent && !shownHoliday.isHoliday && (
+            <span className="rounded-full bg-m3-primary-container px-2.5 py-0.5 text-xs font-semibold text-m3-on-primary-container font-display">
+              {t('permanentScheduleShort')}
+            </span>
+          )}
         </div>
 
         {/* Direct Link to Full Timetable Screen */}
@@ -316,6 +258,7 @@ export const TimetableWidget: React.FC = () => {
                   <div className="relative">
                     <LessonCard
                       lesson={lesson}
+                      day={todayData}
                       hour={hour}
                       variant="widget"
                       isOngoing={isHourCurrent}

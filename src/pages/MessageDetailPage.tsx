@@ -10,18 +10,49 @@ import {
   CheckCheck,
   AlertCircle,
 } from 'lucide-react';
+import { bakalariApi } from '../api/client';
 import { useDataStore } from '../stores/dataStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useAuthStore } from '../stores/authStore';
-import { formatCzechDate } from '../utils/dateUtils';
+import { formatMessageDate } from '../utils/dateUtils';
 import { MaterialWavyDivider } from '../components/common/MaterialWavyDivider';
+import { MaterialMorphingLoader } from '../components/common/MaterialMorphingLoader';
 import { MessageAttachments } from '../components/common/MessageAttachments';
+import type { KomensMessage } from '../types/bakalari';
 import { sanitizeMessageHtml } from '../utils/textUtils';
 
 export const MessageDetailPage: React.FC = () => {
+  const { messages, selectedMessageId } = useDataStore();
+  const { setActiveScreen, t } = useSettingsStore();
+  const queryId = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.hash.split('?')[1] || '').get('id')
+    : null;
+  const id = selectedMessageId || queryId;
+  const message = messages.find((m) => m.id === id || m.localId === id) || messages[0];
+
+  if (!message) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center justify-center gap-4">
+        <p className="text-sm font-bold text-m3-on-surface-variant font-display">
+          {t('messageNotFound')}
+        </p>
+        <button
+          onClick={() => setActiveScreen('messages')}
+          className="px-5 py-2.5 rounded-full bg-m3-primary text-m3-on-primary font-bold text-xs font-display m3-pressable"
+        >
+          {t('backToMessages')}
+        </button>
+      </div>
+    );
+  }
+
+  return <MessageDetailContent key={`${message.type}:${message.id}`} message={message} />;
+};
+
+type MessageBody = Awaited<ReturnType<typeof bakalariApi.getKomensMessageBody>>;
+
+function MessageDetailContent({ message }: { message: KomensMessage }) {
   const {
-    messages,
-    selectedMessageId,
     markMessageAsRead,
     setReplyToMessageId,
     confirmMessage,
@@ -37,15 +68,30 @@ export const MessageDetailPage: React.FC = () => {
   const [confirmFailed, setConfirmFailed] = useState(false);
   const [checkStatusNotice, setCheckStatusNotice] = useState<string | null>(null);
 
-  // Retrieve message either from selectedMessageId or URL query param
-  const queryId = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.hash.split('?')[1] || '').get('id')
-    : null;
+  const { type } = message;
+  const serverId = message.serverId || (/^(?:sent|recv-sim)-\d+$/.test(message.id) ? null : message.id);
+  // Older offline snapshots have no flag and may have lost both images and colors.
+  const loadBody = Boolean(serverId && type !== 'draft' && message.needsBodyDetail !== false && !bakalariApi.getIsMockMode());
+  const [detail, setDetail] = useState<{ id: string; body: MessageBody }>();
+  const activeDetail = loadBody && detail?.id === serverId ? detail : undefined;
 
-  const messageId = selectedMessageId || queryId;
-  const message = messages.find((m) => m.id === messageId) || messages[0];
-  // Cached HTML from older app versions must pass the current policy too.
-  const safeHtml = useMemo(() => sanitizeMessageHtml(message?.html || ''), [message?.html]);
+  useEffect(() => {
+    if (!loadBody || !serverId || type === 'draft') return;
+    let active = true;
+    void bakalariApi.getKomensMessageBody(type, serverId).then((body) => {
+      if (active) setDetail({ id: serverId, body });
+    }).catch(() => {
+      if (active) setDetail({ id: serverId, body: null });
+    });
+    return () => { active = false; };
+  }, [loadBody, serverId, type]);
+
+  const detailBody = activeDetail?.body;
+  const body = detailBody && (detailBody.text || detailBody.html?.includes('<img ')) ? detailBody : message;
+  const safeHtml = useMemo(() => sanitizeMessageHtml(body.html || ''), [body.html]);
+  const waitingForImages = loadBody && message.needsBodyDetail === true && !activeDetail;
+  const imagesUnavailable = loadBody && message.needsBodyDetail === true && activeDetail &&
+    (detailBody?.needsBodyDetail || !safeHtml.includes('<img '));
 
   useEffect(() => {
     if (message && message.unread) {
@@ -75,7 +121,7 @@ export const MessageDetailPage: React.FC = () => {
   const handleReply = () => {
     if (!message) return;
     setReplyToMessageId(message.id);
-    setActiveScreen(`new-message?replyTo=${message.id}`);
+    setActiveScreen(`new-message?replyTo=${encodeURIComponent(message.id)}`);
   };
 
   const handleManualConfirm = async (recipientId?: string) => {
@@ -83,22 +129,6 @@ export const MessageDetailPage: React.FC = () => {
     await confirmSentMessage(message.id, recipientId);
     setCheckStatusNotice(t('markConfirmedStatusNotice'));
   };
-
-  if (!message) {
-    return (
-      <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center justify-center gap-4">
-        <p className="text-sm font-bold text-m3-on-surface-variant font-display">
-          {t('messageNotFound')}
-        </p>
-        <button
-          onClick={() => setActiveScreen('messages')}
-          className="px-5 py-2.5 rounded-full bg-m3-primary text-m3-on-primary font-bold text-xs font-display m3-pressable"
-        >
-          {t('backToMessages')}
-        </button>
-      </div>
-    );
-  }
 
   const isNoticeboard = message.type === 'noticeboard';
   const isSent = message.type === 'sent';
@@ -437,7 +467,7 @@ export const MessageDetailPage: React.FC = () => {
                 {/* Row 2: Time and Date */}
                 <div className="flex items-center gap-1.5 text-xs text-m3-on-surface-variant font-medium">
                   <Clock className="w-3.5 h-3.5 text-m3-on-surface-variant/70 shrink-0" />
-                  <span>{formatCzechDate(message.date, 'withTime')}</span>
+                  <span>{formatMessageDate(message.date, 'withTime')}</span>
                   {isSent && (
                     <span className="text-m3-on-surface-variant/70 ml-1 truncate">
                       (Od: {cleanSenderName})
@@ -503,7 +533,7 @@ export const MessageDetailPage: React.FC = () => {
                     </span>
                     {message.confirmedDate && (
                       <span className="text-xs font-normal text-m3-on-surface-variant/70">
-                        ({formatCzechDate(message.confirmedDate, 'withTime')})
+                        ({formatMessageDate(message.confirmedDate, 'withTime')})
                       </span>
                     )}
                   </div>
@@ -546,7 +576,7 @@ export const MessageDetailPage: React.FC = () => {
                       <span>{rec.name}</span>
                       {rec.confirmed && rec.confirmedDate && (
                         <span className="text-[10px] opacity-75">
-                          ({formatCzechDate(rec.confirmedDate, 'short')})
+                          ({formatMessageDate(rec.confirmedDate, 'short')})
                         </span>
                       )}
                       {!rec.confirmed && (
@@ -580,10 +610,19 @@ export const MessageDetailPage: React.FC = () => {
           {message.attachments && message.attachments.length > 0 && (
             <MessageAttachments key={message.id} attachments={message.attachments} />
           )}
-          {message.html ? (
+          {safeHtml ? (
             <div className="komens-message-content" dangerouslySetInnerHTML={{ __html: safeHtml }} />
           ) : (
-            <div className="whitespace-pre-wrap">{message.text}</div>
+            <div className="whitespace-pre-wrap">{body.text}</div>
+          )}
+          {waitingForImages && (
+            <p role="status" className="flex items-center justify-center gap-2 text-sm text-m3-on-surface-variant">
+              <MaterialMorphingLoader size={20} className="shrink-0 text-m3-primary" />
+              <span>{t('messageImagesLoading')}</span>
+            </p>
+          )}
+          {imagesUnavailable && (
+            <p role="status" className="text-sm text-m3-on-surface-variant">{t('messageImagesUnavailable')}</p>
           )}
         </div>
 
@@ -591,4 +630,4 @@ export const MessageDetailPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}

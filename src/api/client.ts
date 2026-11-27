@@ -20,6 +20,8 @@ import {
   LessonChange,
 } from '../types/bakalari';
 import { isMessageUnread } from '../domain/messageState';
+import { komensAbsenceRecipients, type AbsenceRecipient } from '../domain/absenceRecipients';
+import { isAddressablePerson } from '../domain/replyRecipient';
 import { shiftIsoDate, toIsoDate } from '../domain/time';
 import {
   buildAbsenceRecords,
@@ -58,10 +60,22 @@ import {
 import { sortByDateDesc } from '../utils/dateUtils';
 import { isNativePlatform } from '../native/platform';
 import { LocalStorageTokenStorage, NativeTokenStorage, TokenStorage } from './tokenStorage';
-import { cleanHtmlToPlainText, hasHtmlMarkup, sanitizeMessageHtml, cleanLessonGroup } from '../utils/textUtils';
+import { cleanHtmlToPlainText, parseKomensMessageBody, cleanLessonGroup } from '../utils/textUtils';
 import { groupConsecutiveEvents } from '../utils/eventUtils';
 import { rememberDirectorySchools, schoolDirectoryHeaders } from './schoolDirectory';
 import { getSavedStudentName, isClassLikeName } from '../utils/userUtils';
+
+function readClassTeacher(data: any): Pick<UserProfile, 'classTeacherId' | 'classTeacherName'> {
+  const teacher = data?.ClassTeacher || data?.Class?.ClassTeacher || data?.Class?.Teacher;
+  if (typeof teacher === 'string') return { classTeacherName: teacher };
+  if (!teacher) return {};
+  const id = teacher.Code || teacher.Id;
+  const name = teacher.DisplayName || teacher.Name || `${teacher.FirstName || ''} ${teacher.LastName || ''}`;
+  return {
+    classTeacherId: typeof id === 'string' || typeof id === 'number' ? String(id).trim() || undefined : undefined,
+    classTeacherName: typeof name === 'string' ? name.trim() || undefined : undefined,
+  };
+}
 
 export function normalizeSchoolUrl(url: string): string {
   let cleaned = (url || '').trim();
@@ -142,7 +156,6 @@ class BakalariApiClient {
   private serverOutage: boolean = false;
   private serverOutageMessage: string = '';
   private onOutageChange?: (isDown: boolean, message: string) => void;
-  private cachedKomensMessageTypes: KomensMessageTypeInfo[] = [];
   private sessionExpired: boolean = false;
   private sessionListeners = new Set<(expired: boolean) => void>();
 
@@ -732,18 +745,6 @@ class BakalariApiClient {
       const fullName = (data.FullName || data.Name || `${data.UserFirstName || ''} ${data.UserLastName || ''}`.trim() || jwtName || '').split(',')[0].trim();
       const resolvedClass = data.Class?.Abbrev || data.Class?.Name || data.Class || data.ClassName || jwtClass || '';
       
-      let classTeacherName: string | undefined = undefined;
-      let classTeacherId: string | undefined = undefined;
-      const ct = data.ClassTeacher || data.Class?.Teacher || data.Class?.ClassTeacher || data.Teacher;
-      if (ct) {
-        if (typeof ct === 'string') {
-          classTeacherName = ct;
-        } else if (typeof ct === 'object') {
-          classTeacherName = ct.DisplayName || ct.Name || `${ct.FirstName || ''} ${ct.LastName || ''}`.trim() || undefined;
-          classTeacherId = ct.Code || ct.Id || undefined;
-        }
-      }
-
       const profile: UserProfile = {
         id: data.UserUID || data.Id || data.UserUid || this.tokens?.userId || 'unknown',
         name: fullName,
@@ -752,8 +753,7 @@ class BakalariApiClient {
         schoolName: data.SchoolName || data.SchoolOrganizationName || this.tokens?.schoolUrl || 'Škola',
         schoolUrl: this.tokens?.schoolUrl || '',
         email: data.Email,
-        classTeacherName,
-        classTeacherId,
+        ...readClassTeacher(data),
       };
 
       // Only save if valid name (not a class code)
@@ -916,7 +916,7 @@ class BakalariApiClient {
       const hours = (data.Hours && data.Hours.length > 0)
         ? data.Hours.map((h: any) => ({
             id: h.Id,
-            caption: h.Caption || String(h.Id),
+            caption: String(h.Caption ?? '') || String(h.Id),
             beginTime: formatHourTime(h.BeginTime),
             endTime: formatHourTime(h.EndTime),
           }))
@@ -1410,8 +1410,7 @@ class BakalariApiClient {
           id: m.Id || Math.random().toString(),
           type: 'noticeboard',
           title: m.Title || 'Nástěnka',
-          text: cleanHtmlToPlainText(rawContent),
-          html: hasHtmlMarkup(rawContent) ? sanitizeMessageHtml(rawContent) : undefined,
+          ...parseKomensMessageBody(rawContent),
           sender: resolveSender(m, 'Ředitelství', 'Nástěnka'),
           date: m.SentDate || m.Date || new Date().toISOString(),
           unread: isMessageUnread(m),
@@ -1465,8 +1464,7 @@ class BakalariApiClient {
           id: m.Id || Math.random().toString(),
           type: 'received',
           title: m.Title || 'Zpráva',
-          text: cleanHtmlToPlainText(rawContent),
-          html: hasHtmlMarkup(rawContent) ? sanitizeMessageHtml(rawContent) : undefined,
+          ...parseKomensMessageBody(rawContent),
           sender: resolveSender(m, 'Vyučující', 'Vyučující'),
           date: m.SentDate || m.Date || new Date().toISOString(),
           unread: isMessageUnread(m),
@@ -1651,12 +1649,13 @@ class BakalariApiClient {
           (recipients && recipients.length > 0 ? recipients.map((r: any) => r.name).filter(Boolean).join(', ') : '');
 
         const rawContent = msgSource.Text || msgSource.Content || m.Text || m.Content || '';
+        const messageType = String(msgSource.MessageType || msgSource.Type || m.MessageType || m.Type || '');
         all.push({
           id: msgSource.Id || m.Id || Math.random().toString(),
           type: 'sent',
+          category: /^(Apology|OMLUVENKA)$/i.test(messageType) ? 'absence' : undefined,
           title: msgSource.Title || m.Title || 'Odeslaná zpráva',
-          text: cleanHtmlToPlainText(rawContent),
-          html: hasHtmlMarkup(rawContent) ? sanitizeMessageHtml(rawContent) : undefined,
+          ...parseKomensMessageBody(rawContent),
           sender: { id: 'me', name: 'Já' },
           recipientName: recipientName || undefined,
           date: msgSource.SentDate || msgSource.Date || m.SentDate || m.Date || new Date().toISOString(),
@@ -2091,10 +2090,11 @@ class BakalariApiClient {
         id: `${subjectId}-${item.Date || idx}-${idx}`,
         date: item.Date ? item.Date.split('T')[0] : '',
         hour: item.HourCaption || (item.LessonLabel ? `${item.LessonLabel}. hod` : `${idx + 1}. hod`),
+        period: item.HourCaption == null ? undefined : String(item.HourCaption),
         subjectId: subj.Id || subjectId,
         subjectAbbrev: subjectAbbrev,
         subjectName: subjectName,
-        topic: item.Theme || item.Topic || 'Bez názvu tématu',
+        topic: item.Theme || item.Topic || '',
         teacher: item.TeacherName || item.Teacher || '',
         note: item.Note || undefined,
         lessonLabel: item.LessonLabel ? String(item.LessonLabel) : undefined,
@@ -2116,6 +2116,7 @@ class BakalariApiClient {
         id: item.Id || `cb-${idx}`,
         date: item.Date ? item.Date.split('T')[0] : '',
         hour: item.HourCaption || (item.Hour ? `${item.Hour}. hod` : ''),
+        period: String(item.HourCaption ?? '') || (item.Hour == null ? undefined : String(item.Hour)),
         subjectId: item.SubjectId || item.Subject?.Id || '',
         subjectAbbrev: item.SubjectAbbrev || item.Subject?.Abbrev || '',
         subjectName: item.SubjectName || item.Subject?.Name || '',
@@ -2213,12 +2214,14 @@ class BakalariApiClient {
   }
 
   public async getKomensMessageTypes(): Promise<{
+    loaded: boolean;
     messageTypes: KomensMessageTypeInfo[];
     apiStudents: StudentItem[];
     apiTeachers: { id: string; name: string; role?: string; email?: string }[];
   }> {
     if (this.isMockMode) {
       return {
+        loaded: true,
         messageTypes: MOCK_MESSAGE_TYPES,
         apiStudents: MOCK_STUDENTS,
         apiTeachers: [],
@@ -2245,14 +2248,12 @@ class BakalariApiClient {
                       name: r.Name || r.DisplayName || '',
                       displayName: r.DisplayName || r.Name || '',
                       abbreviation: r.Abbreviation || '',
-                      isDefault: !!r.IsDefault,
+                      isDefault: r.IsDefault === true || /^(?:true|1)$/i.test(String(r.IsDefault)),
                     }))
                   : [],
               }))
             : [],
         }));
-
-        this.cachedKomensMessageTypes = messageTypes;
 
         // Extract student and teacher lists from RecipientsTypes and data.Recipients
         const apiStudentsMap = new Map<string, StudentItem>();
@@ -2332,6 +2333,7 @@ class BakalariApiClient {
         }
 
         return {
+          loaded: true,
           messageTypes,
           apiStudents: Array.from(apiStudentsMap.values()),
           apiTeachers: Array.from(apiTeachersMap.values()),
@@ -2342,6 +2344,7 @@ class BakalariApiClient {
     }
 
     return {
+      loaded: false,
       messageTypes: this.isMockMode ? MOCK_MESSAGE_TYPES : [
         {
           abbreviation: 'OBECNA',
@@ -2367,6 +2370,24 @@ class BakalariApiClient {
       apiStudents: [],
       apiTeachers: [],
     };
+  }
+
+  public async getAbsenceExcuseRecipients(): Promise<AbsenceRecipient[]> {
+    const { loaded, messageTypes } = await this.getKomensMessageTypes();
+    const recipients = komensAbsenceRecipients(messageTypes);
+    if (recipients.length || (loaded && !messageTypes.some(type => type.abbreviation.toUpperCase() === 'OMLUVENKA'))) {
+      return recipients;
+    }
+
+    try {
+      const profile = await this.request('/api/3/user', { skipOutageFlag: true });
+      const { classTeacherId, classTeacherName } = readClassTeacher(profile);
+      return classTeacherId && isAddressablePerson(classTeacherId)
+        ? [{ id: classTeacherId, name: classTeacherName || '', isDefault: true }]
+        : [];
+    } catch {
+      return [];
+    }
   }
 
   public async sendMessage(
@@ -2429,42 +2450,13 @@ class BakalariApiClient {
     const isAllDay = Boolean(payload.isAllDay);
 
     // Clean recipient IDs (strip any UI prefix like "indiv:")
-    let cleanedRecipients = (payload.recipients || [])
+    const cleanedRecipients = (payload.recipients || [])
       .map((r) => (typeof r === 'string' ? r.replace(/^indiv:/, '').trim() : ''))
       .filter(Boolean);
 
-    // If it's an absence message, ensure we have a valid Bakalari teacher code
-    if (isAbsence) {
-      if (this.cachedKomensMessageTypes.length === 0) {
-        try {
-          await this.getKomensMessageTypes();
-        } catch {}
-      }
-
-      const omluvenkaType = this.cachedKomensMessageTypes.find(
-        (mt) => (mt.abbreviation || '').toUpperCase() === 'OMLUVENKA'
-      );
-      const omluvenkaRecipients = (omluvenkaType?.recipientsTypes || []).flatMap((rt) => rt.recipients || []);
-      const defaultCode = omluvenkaRecipients[0]?.code;
-
-      const resolved = cleanedRecipients.map((recId) => {
-        if (!recId.startsWith('teacher-') && !recId.startsWith('custom:')) {
-          return recId;
-        }
-        const cleanName = recId.replace(/^teacher-/, '').replace(/^custom:/, '').toLowerCase();
-        const match = omluvenkaRecipients.find((r) => {
-          const rName = (r.displayName || r.name || '').toLowerCase();
-          const rCode = (r.code || '').toLowerCase();
-          return rName === cleanName || rCode === cleanName;
-        });
-        return match?.code || defaultCode || '';
-      }).filter(Boolean);
-
-      if (resolved.length > 0) {
-        cleanedRecipients = resolved;
-      } else if (defaultCode) {
-        cleanedRecipients = [defaultCode];
-      }
+    if (isAbsence && (cleanedRecipients.length !== 1 || !isAddressablePerson(cleanedRecipients[0]) ||
+      (payload.recipientType && payload.recipientType !== 'U'))) {
+      throw new Error('An absence excuse requires one verified teacher ID.');
     }
 
     const formatIsoDate = (d?: string, isEnd = false) => {
@@ -2528,20 +2520,30 @@ class BakalariApiClient {
     }
   }
 
-  public async getSentMessageDetail(id: string): Promise<any | null> {
+  private async getKomensMessageDetail(type: Exclude<KomensMessage['type'], 'draft'>, id: string): Promise<any | null> {
     if (this.isMockMode) return null;
+    const encodedId = encodeURIComponent(id);
     try {
-      const data: any = await this.request(`/api/3/komens/messages/sent/${id}`);
-      return data?.Message || data;
+      const data: any = await this.request(`/api/3/komens/messages/${type}/${encodedId}`, { skipOutageFlag: true });
+      return data?.Message ?? data;
     } catch {
       try {
-        const data: any = await this.request(`/api/3/komens/message/${id}`);
-        return data?.Message || data;
-      } catch (e) {
-        console.warn(`Failed to fetch sent message detail for ${id}:`, e);
+        const data: any = await this.request(`/api/3/komens/message/${encodedId}`, { skipOutageFlag: true });
+        return data?.Message ?? data;
+      } catch {
         return null;
       }
     }
+  }
+
+  public async getSentMessageDetail(id: string): Promise<any | null> {
+    return this.getKomensMessageDetail('sent', id);
+  }
+
+  public async getKomensMessageBody(type: Exclude<KomensMessage['type'], 'draft'>, id: string) {
+    const detail = await this.getKomensMessageDetail(type, id);
+    const raw = detail?.Text || detail?.Content;
+    return typeof raw === 'string' && raw ? parseKomensMessageBody(raw) : null;
   }
 
   public async confirmMessage(id: string): Promise<boolean> {
